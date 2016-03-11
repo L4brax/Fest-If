@@ -61,28 +61,28 @@ FILE SECTION.
         01 fscTampon.
           02 fs_cleSce. 
             03 fs_nomSce PIC A(30).
-            03 fs_dateA PIC X(4).
-          02 fs_capacite PIC X(2).
-          02 fs_cout  PIC X(6).  
+            03 fs_dateA PIC 9(4).
+          02 fs_capacite PIC 9(2).
+          02 fs_cout  PIC 9(6).  
 
 
         FD freservations.
         01 fresTampon. 
-          02 fres_id            PIC X(9).
+          02 fres_id            PIC 9(9).
           02 fres_nomPa         PIC A(30).
           02 fres_prenom        PIC A(30).
-          02 fres_dep           PIC X(2).
-          02 fres_dateA         PIC X(4).
+          02 fres_dep           PIC 9(2).
+          02 fres_dateA         PIC 9(4).
           02 fres_adresseEmail  PIC X(30).
           02 fres_numTel        PIC XXXXXXXXXX.
-          02 fres_dateNaissance PIC X(8). 
+          02 fres_dateNaissance PIC 9(8). 
 
         FD fpass.
         01 passTampon.
           02 fp_clePass. 
             03 fp_nomPa PIC A(30).
-            03 fp_dateA PIC X(4).
-          02 fp_prix PIC X(2).
+            03 fp_dateA PIC 9(4).
+          02 fp_prix PIC 9(4).
 
         FD fgroupes.
         01 fgTampon.
@@ -97,33 +97,29 @@ FILE SECTION.
         FD frepresentations.
         01 frepTampon.
           02 frep_cleRep. 
-            03 frep_jour  PIC X(2).
-            03 frep_heureDebut PIC X(4).
-            03 frep_dateA PIC X(4).
+            03 frep_jour  PIC 9(2).
+            03 frep_heureDebut PIC 9(4).
+            03 frep_dateA PIC 9(4).
             03 frep_nomSce PIC A(30).
           02 frep_nomGr PIC A(30).
-          02 frep_cachet PIC X(6).
-          02 frep_nbPersonneMax PIC A(30).
+          02 frep_cachet PIC 9(6).
+          02 frep_nbPersonneMax PIC 9(30).
 
 
          FD feditions. 
          01 fedTampon. 
-          02 fe_dateA PIC X(4). 
-          02 fe_capacite PIC X(6).
-          02 fe_nbJour PIC X(2). 
-          02 fe_NbScene PIC X(2).
-          02 fe_nbArtiste PIC X(3).
-          02 fe_nbResaJourUn PIC X(4).
-          02 fe_nbResaJourDeux PIC X(4). 
-          02 fe_nbResaJourTrois PIC X(4). 
-          02 fe_resultat PIC S9(30). 
-          02 fe_coutMoyenScene PIC X(30). 
-          02 fe_coutArtistes PIC X(30). 
+          02 fe_dateA PIC 9(4). 
+          02 fe_capacite PIC 9(6).
+          02 fe_nbJour PIC 9(2). 
+          02 fe_NbScene PIC 9(2).
+          02 fe_nbArtiste PIC 9(3).
+          02 fe_nbResaJourUn PIC 9(4).
+          02 fe_nbResaJourDeux PIC 9(4). 
+          02 fe_nbResaJourTrois PIC 9(4). 
+          02 fe_resultat PIC 9(30). 
+          02 fe_coutMoyenScene PIC 9(30). 
+          02 fe_coutArtistes PIC 9(30). 
                   
-          
-        
-                           
-
 WORKING-STORAGE SECTION.
       *> Déclarations des zones de compte rendu  
         77 fs_stat PIC 9(2). 
@@ -134,8 +130,6 @@ WORKING-STORAGE SECTION.
         77 frep_stat PIC 9(2).
         77 fe_stat PIC 9(2).
         77 choixMenu PIC 9(2).
-        77 choixMenu1 PIC 9(2).
-        77 choixMenu2 PIC 9(2).
         77 choix     PIC 9(2).
         77 Wfin      PIC 9.
     	*>Variables pass réservation
@@ -219,7 +213,7 @@ PROCEDURE DIVISION.
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
          PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
               DISPLAY '  _____________* Menu principal *_________'
-              DISPLAY ' |Annuler :                              0|'
+              DISPLAY ' |Quitter le programme :                 0|'
               DISPLAY ' |Gestion des reservations :             1|'
               DISPLAY ' |Gestion des pass :                     2|'
               DISPLAY ' |Gestion des groupes :                  3|'
@@ -227,6 +221,7 @@ PROCEDURE DIVISION.
               DISPLAY ' |Gestion des scènes :                   5|'
               DISPLAY ' |Gestion des éditions :                 6|'
               DISPLAY ' |________________________________________|'
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choixMenu
               EVALUATE choixMenu
                WHEN 1 PERFORM GESTION_RESERVATIONS
@@ -244,11 +239,12 @@ PROCEDURE DIVISION.
        GESTION_RESERVATIONS.
       	PERFORM WITH TEST AFTER UNTIL choix=0 
          PERFORM WITH TEST AFTER UNTIL choix<9                 
-              DISPLAY '  ________* Gestion réservations *________'
+              DISPLAY '  ______* Gestion des réservations *______'
               DISPLAY ' |Annuler :                              0|'
               DISPLAY ' |Ajouter une reservation :              1|'
               DISPLAY ' |Rechercher une reservation :           2|'
               DISPLAY ' |________________________________________|'
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
               EVALUATE choix
               WHEN 1 PERFORM AJOUTER_RESERVATION
@@ -302,13 +298,14 @@ PROCEDURE DIVISION.
        RECHERCHER_RESERVATION.
               PERFORM WITH TEST AFTER UNTIL choix=0 
                PERFORM WITH TEST AFTER UNTIL choix<9                 
-                 DISPLAY '  ______________* Recherche *______________'
-                 DISPLAY ' |Annuler :                              0|'
+                 DISPLAY '  _________* Recherche réservation*_______'
+                 DISPLAY ' |Retour menu principal:                 0|'
                  DISPLAY ' |Recherche par nom :                    1|'
                  DISPLAY ' |Recherche par id :                     2|'
                  DISPLAY ' |Recherche par édition :                3|'
                  DISPLAY ' |Recherche par département :            4|'
                  DISPLAY ' |________________________________________|'
+                 DISPLAY 'Faites un choix : ' WITH NO ADVANCING
                  ACCEPT choix
                  EVALUATE choix
                  WHEN 1 PERFORM RECHERCHE_RESERVATION_NOM
@@ -405,7 +402,7 @@ PROCEDURE DIVISION.
        AFFICHER_RESERVATION.
         DISPLAY '_________________________________________'
         DISPLAY 'Id de réservation  : ', fres_id 
-        DISPLAY 'Nom                : ', fres_nomPa
+        DISPLAY 'Pass               : ', fres_nomPa
         DISPLAY 'Prénom             : ', fres_prenom
         DISPLAY 'Département        : ', fres_dep
         DISPLAY 'Edition            : ', fres_dateA 
@@ -418,12 +415,13 @@ PROCEDURE DIVISION.
        GESTION_PASS.
       	PERFORM WITH TEST AFTER UNTIL choix=0 
          PERFORM WITH TEST AFTER UNTIL choix<9                 
-              DISPLAY '  ___________* Gestion Pass *_____________'
+              DISPLAY '  _________* Gestion des Pass *___________'
               DISPLAY ' |Annuler :                              0|'
               DISPLAY ' |Ajouter un pass :                      1|'
               DISPLAY ' |Rechercher un pass :                   2|'
               DISPLAY ' |Modifier un pass :                     3|'
               DISPLAY ' |________________________________________|'
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
               EVALUATE choix
               WHEN 1 PERFORM AJOUTER_PASS
@@ -454,11 +452,12 @@ PROCEDURE DIVISION.
        RECHERCHER_PASS.
        PERFORM WITH TEST AFTER UNTIL choix=0 
         PERFORM WITH TEST AFTER UNTIL choix<9                 
-          DISPLAY '  ______________* Recherche *______________'
-          DISPLAY ' |Annuler :                              0|'
-          DISPLAY ' |Recherche par édition et nom :         1|'
-          DISPLAY ' |Recherche par édition :                2|'
+          DISPLAY '  ________* Recherche des pass *__________'
+          DISPLAY ' |Retour au menu gestion des pass :      0|'
+          DISPLAY ' |Recherche par édition et nom    :      1|'
+          DISPLAY ' |Recherche par édition           :      2|'
           DISPLAY ' |________________________________________|'
+          DISPLAY 'Faites un choix : ' WITH NO ADVANCING
           ACCEPT choix
           EVALUATE choix
           WHEN 1 PERFORM RECHERCHE_PASS_ID
@@ -567,35 +566,36 @@ PROCEDURE DIVISION.
 
        CHOIX_MODIF_PASS. 
         PERFORM WITH TEST AFTER UNTIL choix<9                 
-          DISPLAY '  ____________* Modification *____________'
-          DISPLAY ' |Annuler :                              0|'
-          DISPLAY ' |Modifier le nom :                      1|'
+          DISPLAY '  ________* Modification des pass *_______'
+          DISPLAY ' |Annuler             :                  0|'
+          DISPLAY ' |Modifier le nom     :                  1|'
           DISPLAY ' |Modifier l''édition :                  2|'
-          DISPLAY ' |Modifier le prix :                     3|'
+          DISPLAY ' |Modifier le prix    :                  3|'
           DISPLAY ' |________________________________________|'
+          DISPLAY 'Faites un choix : ' WITH NO ADVANCING
           ACCEPT choix
         END-PERFORM.
 
       *>Gestion des groupes
        GESTION_GROUPES.
-              PERFORM WITH TEST AFTER UNTIL choixMenu1=0
-         PERFORM WITH TEST AFTER UNTIL choixMenu1<5                 
-              DISPLAY '  ____________* Menu Groupe *_____________'
+        PERFORM WITH TEST AFTER UNTIL choix=0
+         PERFORM WITH TEST AFTER UNTIL choix<5                 
+              DISPLAY '  _______* Menu gestion des groupes *_____'
               DISPLAY ' |Revenir au menu principal :            0| '
-              DISPLAY ' |Ajouter un groupe :                    1|'
-              DISPLAY ' |Afficher les groupes :                 2|'
-              DISPLAY ' |Supprimer un groupe :                  3|'
-              DISPLAY ' |Modifier un groupe :                   4|'
+              DISPLAY ' |Ajouter un groupe         :            1|'
+              DISPLAY ' |Afficher les groupes      :            2|'
+              DISPLAY ' |Supprimer un groupe       :            3|'
+              DISPLAY ' |Modifier un groupe        :            4|'
               DISPLAY ' |________________________________________|'
-    
-              ACCEPT choixMenu1
-              EVALUATE choixMenu1
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+              ACCEPT choix
+              EVALUATE choix
               WHEN 1 PERFORM AJOUTER_GROUPE
               WHEN 2 PERFORM AFFICHER_GROUPES
               WHEN 3 PERFORM SUPPRIMER_GROUPE
               WHEN 4 PERFORM MODIFIER_GROUPE
-       END-EVALUATE
-       END-PERFORM
+              END-EVALUATE
+        END-PERFORM
        END-PERFORM.
               
        AJOUTER_GROUPE.
@@ -717,18 +717,18 @@ PROCEDURE DIVISION.
               END-IF.
       *>Gestion des représentations
        GESTION_REPRESENTATIONS.
-              PERFORM WITH TEST AFTER UNTIL choixMenu2=0
-         PERFORM WITH TEST AFTER UNTIL choixMenu2<5                 
-              DISPLAY '  ________* Menu Représentation *_________'
+              PERFORM WITH TEST AFTER UNTIL choix=0
+         PERFORM WITH TEST AFTER UNTIL choix<5                 
+              DISPLAY '  __* Menu gestion des représentation *___'
               DISPLAY ' |Revenir au menu principal :            0| '
               DISPLAY ' |Ajouter une nouvelle représentation :  1|'
               DISPLAY ' |Afficher les représentations par année:2|'
               DISPLAY ' |Supprimer une représentation :         3|'
               DISPLAY ' |Modifier  une représentation :         4|'
               DISPLAY ' |________________________________________|'
- 
-              ACCEPT choixMenu2
-              EVALUATE choixMenu2
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+              ACCEPT choix
+              EVALUATE choix
               WHEN 1 PERFORM AJOUTER_NOUVELLE_REPRESENTATION
               WHEN 2 PERFORM AFFICHER_REPRESENTATION
               WHEN 3 PERFORM SUPPRIMER_REPRESENTATION
@@ -851,16 +851,15 @@ PROCEDURE DIVISION.
                DISPLAY 'La représentation n existe pas'
              NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL choixModifReserv < 1
-                   DISPLAY ' ________________________________ '
-                   DISPLAY '| Que voulez-vous modifier ?     |'
-                   DISPLAY '|                                |'
-                   DISPLAY '| Le jour                      1 |'
-                   DISPLAY '| Heure de début               2 |'      
-                   DISPLAY '| Le nom du groupe             3 |'
-                   DISPLAY '| Le cachet                    4 |'
-                   DISPLAY '| Le nombre de personne max    5 |'
-                   DISPLAY '| Quitter                      0 |'          
-                   DISPLAY '|________________________________|'
+                   DISPLAY ' _____* Modification représentation *____'
+                   DISPLAY '| Quitter                   :           0|'
+                   DISPLAY '| Le jour                   :           1|'
+                   DISPLAY '| Heure de début            :           2|'      
+                   DISPLAY '| Le nom du groupe          :           3|'
+                   DISPLAY '| Le cachet                 :           4|'
+                   DISPLAY '| Le nombre de personne max :           5|'
+                   DISPLAY '|________________________________________|'
+                   DISPLAY 'Faites un choix : ' WITH NO ADVANCING
                    ACCEPT  choixModifReserv
                    EVALUATE  choixModifReserv
                    WHEN 1 
@@ -909,17 +908,14 @@ PROCEDURE DIVISION.
         END-IF.
 
         *>Gestion des scenes
-               GESTION_SCENES.
-         PERFORM WITH TEST AFTER UNTIL choixMenu = 0
-              DISPLAY "-------------------------------------------"
-              DISPLAY "|        BIENVENUE DANS LE MENU           |"
-              DISPLAY "|                                         |"
-              DISPLAY "|  1 -  Ajouter scene                     |"
-              DISPLAY "|  2 -  Afficher scene / edition          |"
-              DISPLAY "|  3 -  Supprimer scene                   |"
-              DISPLAY "|  4 -  Mofifier scene                    |"
+           GESTION_SCENES.
+           PERFORM WITH TEST AFTER UNTIL choixMenu = 0
+              DISPLAY " _______* Menu gestion des scènes *_______ "
+              DISPLAY "|Ajouter scene            :              1|"
+              DISPLAY "|Afficher scene / edition :              2|"
+              DISPLAY "|Supprimer scene          :              3|"
+              DISPLAY "|Mofifier scene           :              4|"
               DISPLAY "|_________________________________________|"
-              DISPLAY " Choix ? "
 
               ACCEPT choixMenu
        
@@ -1014,11 +1010,11 @@ PROCEDURE DIVISION.
            OPEN I-O fscenes
            MOVE 1 TO choix 
            PERFORM WITH TEST AFTER UNTIL choix= 0
-              DISPLAY " _____________MODIFICATION________________|"
-              DISPLAY "|  1 -  Modifier capcicité                |"
-              DISPLAY "|  2 -  Modifier cout                     |"
-              DISPLAY "|_ 0 - quitter____________________________|"
-              DISPLAY " Choix ? "
+              DISPLAY " ________* Modification scènes *__________"
+              DISPLAY "|Annuler              :                  0|"
+              DISPLAY "|Modifier capicité    :                  1|"
+              DISPLAY "|Modifier cout        :                  2|"
+              DISPLAY "|_________________________________________|"
 
               ACCEPT choix
        
@@ -1044,12 +1040,12 @@ PROCEDURE DIVISION.
 
 
        AFFICHER_SCENES.
-       DISPLAY '------------------------'
-       DISPLAY '       --SCENE--        '
+       DISPLAY '_________________________________________'
        DISPLAY 'Nom:      : ' ,fs_nomSce
        DISPLAY 'Année     : ' ,fs_dateA
        DISPLAY 'capcicité : ' ,fs_capacite
-       DISPLAY 'Cout      : ' ,fs_cout.
+       DISPLAY 'Cout      : ' ,fs_cout
+       DISPLAY '_________________________________________'.
 
        MODIFIER_SCENE_CAPACITE.
        MOVE 0 TO fs_capacite
