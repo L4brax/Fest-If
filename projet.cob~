@@ -1172,7 +1172,7 @@ PROCEDURE DIVISION.
          READ feditions
          INVALID KEY
            PERFORM WITH TEST AFTER UNTIL fe_capacite IS NUMERIC AND
-       fe_capacite < 1
+       fe_capacite > 0
              DISPLAY "Indiquez la capacité de l'édition : " WITH NO 
         ADVANCING
              ACCEPT fe_capacite
