@@ -29,12 +29,13 @@ FILE-CONTROL.
        ALTERNATE RECORD KEY IS fp_dateA WITH DUPLICATES.
        
        SELECT fgroupes ASSIGN TO "groupes.dat"
-       ORGANIZATION sequential
-       ACCESS IS sequential
+       ORGANIZATION SEQUENTIAL
+       ACCESS IS SEQUENTIAL
        FILE STATUS IS fg_stat.
+
        SELECT fgroupesTemp ASSIGN TO "groupes_temp.dat"
-       ORGANIZATION sequential
-       ACCESS IS sequential
+       ORGANIZATION SEQUENTIAL
+       ACCESS IS SEQUENTIAL
        FILE STATUS IS fgTemp_stat.
 
        SELECT frepresentations ASSIGN TO "representations.dat"
@@ -52,11 +53,21 @@ FILE-CONTROL.
        ACCESS IS DYNAMIC
        FILE STATUS IS fe_stat
        RECORD KEY IS fe_dateA.
+
+       SELECT fincrements ASSIGN TO "increment.dat"
+       ORGANIZATION SEQUENTIAL 
+       ACCESS IS SEQUENTIAL 
+       FILE STATUS IS fi_stat.
        
 
 DATA DIVISION.
 FILE SECTION.
        
+
+        FD fincrements. 
+        01 finTampon.
+          02 fi_idResa PIC 9(36).
+
         FD fscenes.
         01 fscTampon.
           02 fs_cleSce. 
@@ -68,7 +79,11 @@ FILE SECTION.
 
         FD freservations.
         01 fresTampon. 
+<<<<<<< HEAD
+          02 fres_id            PIC 9(36).
+=======
           02 fres_id            PIC 9(9).
+>>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
           02 fres_nomPa         PIC A(30).
           02 fres_prenom        PIC A(30).
           02 fres_dep           PIC X(2).
@@ -129,17 +144,21 @@ WORKING-STORAGE SECTION.
         77 fgTemp_stat PIC 9(2).
         77 frep_stat PIC 9(2).
         77 fe_stat PIC 9(2).
+        77 fi_stat PIC 9(2). 
+
+      *> Variables globales   
         77 choixMenu PIC 9(2).
         77 choix     PIC 9(2).
         77 Wfin      PIC 9.
+
     	*>Variables pass réservation
         77 nomPa     PIC A(30).
-        77 dateA     PIC X(4).
-        77 dep       PIC X(2).
+        77 dateA     PIC 9(4).
+        77 dep       PIC 9(2).
         77 j         PIC 99.
         77 m         PIC 99.
         77 y         PIC 9999.
-        77 Wtrouve    PIC 9(1).
+        77 Wtrouve   PIC 9(1).
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
         77 pos PIC 9.
@@ -181,9 +200,18 @@ PROCEDURE DIVISION.
        IF fg_stat = 35 THEN
          OPEN OUTPUT fgroupes
          CLOSE fgroupes
-
        ELSE 
          CLOSE fgroupes
+       END-IF
+
+       OPEN EXTEND fincrements
+       IF fi_stat = 35 THEN
+         OPEN OUTPUT fincrements
+          MOVE 0 TO fi_idResa
+          WRITE finTampon END-WRITE
+         CLOSE fincrements
+       ELSE 
+         CLOSE fincrements
        END-IF
 
        OPEN I-O freservations
@@ -255,10 +283,17 @@ PROCEDURE DIVISION.
 
        AJOUTER_RESERVATION.
               OPEN I-O freservations 
-              DISPLAY 'Id de réservation ?'
-              ACCEPT fres_id
+               OPEN EXTEND fincrements
+                READ fincrements
+                MOVE fi_idResa TO fres_id
+                 DISPLAY "Resa Avant  add : ",fi_idResa
+                ADD 1 TO fi_idResa 
+                DISPLAY "Resa : ",fi_idResa
+                REWRITE finTampon
+                END-REWRITE
+               CLOSE fincrements 
+
               READ freservations
-              INVALID KEY
               MOVE 01 TO j
               MOVE 01 TO m
               MOVE 1801 TO j
@@ -267,7 +302,7 @@ PROCEDURE DIVISION.
               ACCEPT fres_prenom
               DISPLAY 'Quelle est son département de résidence?'
               ACCEPT fres_dep
-              DISPLAY 'Quel est l''édition à laquelle il veut participer'
+              DISPLAY'Quel est l''édition à laquelle il veut participer'
               ACCEPT fres_dateA
               DISPLAY 'Quel pass voulez vous acheter? '
               MOVE fres_dateA TO fp_dateA
@@ -291,8 +326,7 @@ PROCEDURE DIVISION.
               DISPLAY 'Quel est son numéro de téléphone?'
               ACCEPT fres_numTel
               WRITE fresTampon END-WRITE
-              NOT INVALID KEY
-                DISPLAY 'L''id de l''événement est déjà pris.'
+              PERFORM AFFICHER_RESERVATION
               CLOSE freservations.
 
        RECHERCHER_RESERVATION.
@@ -908,6 +942,20 @@ PROCEDURE DIVISION.
         END-IF.
 
         *>Gestion des scenes
+<<<<<<< HEAD
+               GESTION_SCENES.
+         PERFORM WITH TEST AFTER UNTIL choix = 0
+          PERFORM WITH TEST AFTER UNTIL choix< 9                 
+
+              DISPLAY "-------------------------------------------"
+              DISPLAY "|        BIENVENUE DANS LE MENU           |"
+              DISPLAY "|                                         |"
+              DISPLAY "|  1 -  Ajouter scene                     |"
+              DISPLAY "|  2 -  Afficher scene / edition          |"
+              DISPLAY "|  3 -  Supprimer scene                   |"
+              DISPLAY "|  4 -  Mofifier scene                    |"
+              DISPLAY "|  0 -  Quitter                           |"
+=======
            GESTION_SCENES.
            PERFORM WITH TEST AFTER UNTIL choixMenu = 0
               DISPLAY " _______* Menu gestion des scènes *_______ "
@@ -916,23 +964,24 @@ PROCEDURE DIVISION.
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
+>>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
               DISPLAY "|_________________________________________|"
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
-              ACCEPT choixMenu
+              ACCEPT choix
        
-              EVALUATE choixMenu
+              EVALUATE choix
                WHEN 1 PERFORM AJOUT_SCENES
                WHEN 2 PERFORM AFFICHER_SCENES_ANNEE
                WHEN 3 PERFORM SUPPRIMER_SCENE
                WHEN 4 PERFORM MODIFIER_SCENE
               END-EVALUATE
 
-              IF (choixMenu <0) OR (choixMenu) > 42 THEN 
+              IF (choix <0) OR (choix) > 9 THEN 
                 DISPLAY "Attention saisir une valeur correcte"
               END-IF
-
-       END-PERFORM.    
+           END-PERFORM    
+          END-PERFORM.    
 
        VERIF_SCENES. 
        OPEN INPUT fscenes
@@ -1001,13 +1050,15 @@ PROCEDURE DIVISION.
 
 
        MODIFIER_SCENE.
-       PERFORM VERIF_SCENES
-       IF Wtrouve = 0 
-        DISPLAY "modification impossible"
-       ELSE 
+       PERFORM AFFICHER_SCENES_ANNEE
+       IF wTrouve = 1 
+        PERFORM VERIF_SCENES
+        IF Wtrouve = 0 
+          DISPLAY "modification impossible"
+        ELSE 
          PERFORM VERIF_PROGRAMME_SCENE    
          IF Wprog = 1
-           DISPLAY 'Il y a une représentation de programmé sur la scène'
+           DISPLAY 'Il y a une représentation programmée sur la scène'
          ELSE 
            OPEN I-O fscenes
            MOVE 1 TO choix 
@@ -1039,6 +1090,8 @@ PROCEDURE DIVISION.
            PERFORM AFFICHER_SCENES
            CLOSE fscenes
          END-IF
+          DISPLAY "modification impossible"
+        END-IF 
        END-IF.
 
 
@@ -1052,8 +1105,8 @@ PROCEDURE DIVISION.
 
        MODIFIER_SCENE_CAPACITE.
        MOVE 0 TO fs_capacite
-       PERFORM WITH TEST AFTER UNTIL fs_capacite > 0
-            DISPLAY 'Saisir une capacite supérieure à 0'
+       PERFORM WITH TEST AFTER UNTIL fs_capacite > 0 AND fs_capacite<99
+            DISPLAY 'Saisir une capacite supérieure à 0 et inférieure à 99'
             ACCEPT fs_capacite
        END-PERFORM.  
 
@@ -1065,23 +1118,35 @@ PROCEDURE DIVISION.
        END-PERFORM.  
 
        AJOUT_SCENES.
+       DISPLAY "Saisir l'année"
+       ACCEPT fe_dateA
+       OPEN INPUT feditions 
+       PERFORM VERIF_EDITION
+       CLOSE feditions
 
-       PERFORM VERIF_SCENES
-       IF Wtrouve = 0 
-          OPEN I-O fscenes
+       IF Wtrouve = 1
+        PERFORM VERIF_SCENES
+        IF Wtrouve = 0 
+        OPEN I-O fscenes
 
-          PERFORM MODIFIER_SCENE_COUT
-          PERFORM MODIFIER_SCENE_CAPACITE
+        PERFORM MODIFIER_SCENE_COUT
+        PERFORM MODIFIER_SCENE_CAPACITE
       
-          WRITE fscTampon  
+        WRITE fscTampon  
           INVALID KEY DISPLAY 'Scène non enregistré'
           NOT INVALID KEY DISPLAY 'Scene enregistré'
-          END-WRITE 
+        END-WRITE 
  
-          PERFORM AFFICHER_SCENES
-          CLOSE fscenes
-       ELSE 
+        PERFORM AFFICHER_SCENES
+        CLOSE fscenes
+        ELSE 
           DISPLAY 'La scène existe déjà'
+        END-IF
+       ELSE 
+       
+       DISPLAY "Edition inconnue, vérifier qu'une édition à été créée"
+       " pour l'année spécifiée"
+
        END-IF.
 
          
