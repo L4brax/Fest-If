@@ -71,7 +71,7 @@ FILE SECTION.
           02 fres_id            PIC 9(9).
           02 fres_nomPa         PIC A(30).
           02 fres_prenom        PIC A(30).
-          02 fres_dep           PIC 9(2).
+          02 fres_dep           PIC X(2).
           02 fres_dateA         PIC 9(4).
           02 fres_adresseEmail  PIC X(30).
           02 fres_numTel        PIC XXXXXXXXXX.
@@ -852,7 +852,7 @@ PROCEDURE DIVISION.
              NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL choixModifReserv < 1
                    DISPLAY ' _____* Modification représentation *____'
-                   DISPLAY '| Quitter                   :           0|'
+                   DISPLAY '| Annuler                   :           0|'
                    DISPLAY '| Le jour                   :           1|'
                    DISPLAY '| Heure de début            :           2|'      
                    DISPLAY '| Le nom du groupe          :           3|'
@@ -911,11 +911,13 @@ PROCEDURE DIVISION.
            GESTION_SCENES.
            PERFORM WITH TEST AFTER UNTIL choixMenu = 0
               DISPLAY " _______* Menu gestion des scènes *_______ "
+              DISPLAY "|Annuler                  :              0|"
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
               DISPLAY "|_________________________________________|"
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
               ACCEPT choixMenu
        
@@ -1010,11 +1012,12 @@ PROCEDURE DIVISION.
            OPEN I-O fscenes
            MOVE 1 TO choix 
            PERFORM WITH TEST AFTER UNTIL choix= 0
-              DISPLAY " ________* Modification scènes *__________"
+              DISPLAY " ______* Modification des scènes *________"
               DISPLAY "|Annuler              :                  0|"
               DISPLAY "|Modifier capicité    :                  1|"
               DISPLAY "|Modifier cout        :                  2|"
               DISPLAY "|_________________________________________|"
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
               ACCEPT choix
        
@@ -1114,13 +1117,15 @@ PROCEDURE DIVISION.
        GESTION_EDITIONS.
        PERFORM WITH TEST AFTER UNTIL choixMenu=0
          PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
-           DISPLAY "  _______________* Menu *_________________"
+           DISPLAY "  ____* Menu gestion des éditions *_______"
            DISPLAY " |Afficher les éditions :                0|"
            DISPLAY " |Ajout d'une éditions :                 1|"
            DISPLAY " |Modifier la capacité d'une édition :   2|"
            DISPLAY " |Modifier le nombre de jour              |"
            DISPLAY " |                       d'une édition : 3|"
            DISPLAY " |________________________________________|"
+           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+
            ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1 PERFORM AFFICHER_EDITIONS
