@@ -79,11 +79,7 @@ FILE SECTION.
 
         FD freservations.
         01 fresTampon. 
-<<<<<<< HEAD
           02 fres_id            PIC 9(36).
-=======
-          02 fres_id            PIC 9(9).
->>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
           02 fres_nomPa         PIC A(30).
           02 fres_prenom        PIC A(30).
           02 fres_dep           PIC X(2).
@@ -942,29 +938,15 @@ PROCEDURE DIVISION.
         END-IF.
 
         *>Gestion des scenes
-<<<<<<< HEAD
-               GESTION_SCENES.
+          GESTION_SCENES.
          PERFORM WITH TEST AFTER UNTIL choix = 0
-          PERFORM WITH TEST AFTER UNTIL choix< 9                 
-
-              DISPLAY "-------------------------------------------"
-              DISPLAY "|        BIENVENUE DANS LE MENU           |"
-              DISPLAY "|                                         |"
-              DISPLAY "|  1 -  Ajouter scene                     |"
-              DISPLAY "|  2 -  Afficher scene / edition          |"
-              DISPLAY "|  3 -  Supprimer scene                   |"
-              DISPLAY "|  4 -  Mofifier scene                    |"
-              DISPLAY "|  0 -  Quitter                           |"
-=======
-           GESTION_SCENES.
-           PERFORM WITH TEST AFTER UNTIL choixMenu = 0
+          PERFORM WITH TEST AFTER UNTIL choix< 9    
               DISPLAY " _______* Menu gestion des scènes *_______ "
               DISPLAY "|Annuler                  :              0|"
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
->>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
               DISPLAY "|_________________________________________|"
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
