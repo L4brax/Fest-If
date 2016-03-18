@@ -710,7 +710,9 @@ PROCEDURE DIVISION.
        MOVE 0 TO Wfin
        MOVE 0 TO Wtrouve
        MOVE fp_dateA TO fe_dateA
+       OPEN INPUT feditions
        PERFORM VERIF_EDITION
+       CLOSE feditions
        IF Wtrouve = 1 THEN
          MOVE 0 TO Wtrouve
          OPEN INPUT fpass 
@@ -734,6 +736,8 @@ PROCEDURE DIVISION.
              END-PERFORM
            END-START
            CLOSE fpass
+        ELSE
+          DISPLAY 'Edition pas trouvée'
         END-IF.
 
         VERIF_PASS_ID.
