@@ -79,11 +79,7 @@ FILE SECTION.
 
         FD freservations.
         01 fresTampon. 
-<<<<<<< HEAD
-          02 fres_id            PIC 9(36).
-=======
           02 fres_id            PIC 9(9).
->>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
           02 fres_nomPa         PIC A(30).
           02 fres_prenom        PIC A(30).
           02 fres_dep           PIC X(2).
@@ -145,7 +141,7 @@ WORKING-STORAGE SECTION.
         77 frep_stat PIC 9(2).
         77 fe_stat PIC 9(2).
         77 fi_stat PIC 9(2). 
-
+        77 Wcount PIC 9(3).
       *> Variables globales   
         77 choixMenu PIC 9(2).
         77 choix     PIC 9(2).
@@ -241,13 +237,13 @@ PROCEDURE DIVISION.
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
          PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
               DISPLAY '  _____________* Menu principal *_________'
-              DISPLAY ' |Quitter le programme :                 0|'
-              DISPLAY ' |Gestion des reservations :             1|'
-              DISPLAY ' |Gestion des pass :                     2|'
-              DISPLAY ' |Gestion des groupes :                  3|'
+              DISPLAY ' |Quitter le programme        :          0|'
+              DISPLAY ' |Gestion des reservations    :          1|'
+              DISPLAY ' |Gestion des pass            :          2|'
+              DISPLAY ' |Gestion des groupes         :          3|'
               DISPLAY ' |Gestion des représentations :          4|'
-              DISPLAY ' |Gestion des scènes :                   5|'
-              DISPLAY ' |Gestion des éditions :                 6|'
+              DISPLAY ' |Gestion des scènes          :          5|'
+              DISPLAY ' |Gestion des éditions        :          6|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choixMenu
@@ -268,8 +264,8 @@ PROCEDURE DIVISION.
       	PERFORM WITH TEST AFTER UNTIL choix=0 
          PERFORM WITH TEST AFTER UNTIL choix<9                 
               DISPLAY '  ______* Gestion des réservations *______'
-              DISPLAY ' |Annuler :                              0|'
-              DISPLAY ' |Ajouter une reservation :              1|'
+              DISPLAY ' |Annuler                    :           0|'
+              DISPLAY ' |Ajouter une reservation    :           1|'
               DISPLAY ' |Rechercher une reservation :           2|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
@@ -283,60 +279,84 @@ PROCEDURE DIVISION.
 
        AJOUTER_RESERVATION.
               OPEN I-O freservations 
-               OPEN EXTEND fincrements
+               OPEN INPUT fincrements
                 READ fincrements
                 MOVE fi_idResa TO fres_id
-                 DISPLAY "Resa Avant  add : ",fi_idResa
+                 *>DISPLAY "Resa Avant  add : ",fi_idResa
                 ADD 1 TO fi_idResa 
-                DISPLAY "Resa : ",fi_idResa
-                REWRITE finTampon
-                END-REWRITE
-               CLOSE fincrements 
+                CLOSE fincrements 
+                OPEN OUTPUT fincrements
+               *>DISPLAY "Resa : ",fi_idResa
+                WRITE finTampon
+                END-WRITE
+               	CLOSE fincrements
 
               READ freservations
               MOVE 01 TO j
               MOVE 01 TO m
               MOVE 1801 TO j
 
-              DISPLAY 'Quel est le prénom du participant?'
-              ACCEPT fres_prenom
-              DISPLAY 'Quelle est son département de résidence?'
-              ACCEPT fres_dep
+
               DISPLAY'Quel est l''édition à laquelle il veut participer'
               ACCEPT fres_dateA
-              DISPLAY 'Quel pass voulez vous acheter? '
               MOVE fres_dateA TO fp_dateA
               PERFORM AFFICHER_PASS_EDITION
-              ACCEPT fres_nomPa
-             PERFORM WITH TEST AFTER UNTIL j>00 AND j<=31 
-              DISPLAY 'Quel est son jour de naissance?'
-              ACCEPT j
-             END-PERFORM
-             PERFORM WITH TEST AFTER UNTIL m>00 AND m<=12 
-              DISPLAY 'Quel est son mois de naissance?'
-              ACCEPT m
-             END-PERFORM
-             PERFORM WITH TEST AFTER UNTIL y>1800 AND y<=2016 
-              DISPLAY 'Quel est son année de naissance?'
-              ACCEPT y
-             END-PERFORM
-              STRING j m y INTO fres_dateNaissance
-              DISPLAY 'Quel est son adresse e-mail?'
-              ACCEPT fres_adresseEmail
-              DISPLAY 'Quel est son numéro de téléphone?'
-              ACCEPT fres_numTel
-              WRITE fresTampon END-WRITE
-              PERFORM AFFICHER_RESERVATION
+              IF Wtrouve = 1 THEN
+
+                PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+                  DISPLAY 'Quel pass voulez vous acheter? '
+                  ACCEPT fres_nomPa
+                  MOVE fres_nomPa TO fp_nomPa
+                  PERFORM VERIF_PASS_ID
+                END-PERFORM
+
+                DISPLAY 'Quel est le prénom du participant?'
+                ACCEPT fres_prenom
+                DISPLAY 'Quelle est son département de résidence?'
+                ACCEPT fres_dep
+              
+  	            PERFORM WITH TEST AFTER UNTIL j>00 AND j<=31 
+  	              DISPLAY 'Quel est son jour de naissance?'
+  	              ACCEPT j
+  	            END-PERFORM
+
+  	            PERFORM WITH TEST AFTER UNTIL m>00 AND m<=12 
+  	              DISPLAY 'Quel est son mois de naissance?'
+  	              ACCEPT m
+  	            END-PERFORM
+
+  	            PERFORM WITH TEST AFTER UNTIL y>1800 AND y<=2016 
+  	              DISPLAY 'Quel est son année de naissance?'
+  	              ACCEPT y
+  	            END-PERFORM
+                STRING j m y INTO fres_dateNaissance
+
+                PERFORM WITH TEST AFTER UNTIL Wcount > 0
+                  MOVE 0 TO Wcount
+                  DISPLAY 'Quel est son adresse e-mail?'
+                  ACCEPT fres_adresseEmail
+                  INSPECT fres_adresseEmail TALLYING Wcount FOR CHARACTERS  AFTER INITIAL '@'
+                END-PERFORM
+  	            
+                PERFORM WITH TEST AFTER UNTIL Wcount = 0
+                  MOVE 0 TO Wcount
+  	              DISPLAY 'Quel est son numéro de téléphone?'
+  	              ACCEPT fres_numTel
+                  INSPECT fres_numTel TALLYING Wcount FOR ALL SPACES
+                END-PERFORM
+  	            WRITE fresTampon END-WRITE
+  	            PERFORM AFFICHER_RESERVATION
+              END-IF
               CLOSE freservations.
 
        RECHERCHER_RESERVATION.
               PERFORM WITH TEST AFTER UNTIL choix=0 
                PERFORM WITH TEST AFTER UNTIL choix<9                 
                  DISPLAY '  _________* Recherche réservation*_______'
-                 DISPLAY ' |Retour menu principal:                 0|'
-                 DISPLAY ' |Recherche par nom :                    1|'
-                 DISPLAY ' |Recherche par id :                     2|'
-                 DISPLAY ' |Recherche par édition :                3|'
+             	   DISPLAY ' |Annuler                   :            0| '
+                 DISPLAY ' |Recherche par pass        :            1|'
+                 DISPLAY ' |Recherche par id          :            2|'
+                 DISPLAY ' |Recherche par édition     :            3|'
                  DISPLAY ' |Recherche par département :            4|'
                  DISPLAY ' |________________________________________|'
                  DISPLAY 'Faites un choix : ' WITH NO ADVANCING
@@ -380,7 +400,7 @@ PROCEDURE DIVISION.
                ACCEPT fres_id 
                READ freservations
                INVALID KEY 
-                     DISPLAY "Il n'y a aucune réservation à cet id."
+               DISPLAY "Il n'y a aucune réservation à cet id."
                NOT INVALID KEY
                PERFORM AFFICHER_RESERVATION
               CLOSE freservations.
@@ -450,7 +470,7 @@ PROCEDURE DIVISION.
       	PERFORM WITH TEST AFTER UNTIL choix=0 
          PERFORM WITH TEST AFTER UNTIL choix<9                 
               DISPLAY '  _________* Gestion des Pass *___________'
-              DISPLAY ' |Annuler :                              0|'
+              DISPLAY ' |Revenir au menu principal :            0| '
               DISPLAY ' |Ajouter un pass :                      1|'
               DISPLAY ' |Rechercher un pass :                   2|'
               DISPLAY ' |Modifier un pass :                     3|'
@@ -507,26 +527,45 @@ PROCEDURE DIVISION.
        
 
        AFFICHER_PASS_EDITION.
-       OPEN INPUT fpass 
        MOVE 0 TO Wfin
-       MOVE fp_dateA TO dateA
-       START fpass, KEY = fp_dateA
+       MOVE 0 TO Wtrouve
+       MOVE fp_dateA TO fe_dateA
+       PERFORM VERIF_EDITION
+       IF Wtrouve = 1 THEN
+         OPEN INPUT fpass 
+         MOVE fp_dateA TO dateA
+         START fpass, KEY = fp_dateA
+           INVALID KEY 
+                DISPLAY "Il n'y a aucun pass d'ajouté " 
+          "pour cet edition."
+           NOT INVALID KEY
+           MOVE 1 TO Wtrouve
+             PERFORM WITH TEST AFTER UNTIL  Wfin = 1
+                READ fpass NEXT RECORD
+                AT END MOVE 1 TO Wfin
+                NOT AT END
+                 IF fp_dateA = dateA THEN
+                   PERFORM AFFICHER_PASS
+                 ELSE                      
+                   MOVE 1 TO Wfin
+                 END-IF
+                END-READ
+             END-PERFORM
+           END-START
+           CLOSE fpass
+        END-IF.
+
+        VERIF_PASS_ID.
+        OPEN INPUT fpass 
+        MOVE 0 TO Wfin
+        MOVE 0 TO Wtrouve
+        READ fpass
          INVALID KEY 
-              DISPLAY "Il n'y a aucun pass d'ajouté " 
-        "pour cet edition."
+              DISPLAY "Ce pass n'est pas valide"
          NOT INVALID KEY
-           PERFORM WITH TEST AFTER UNTIL  Wfin = 1
-              READ fpass NEXT RECORD
-              AT END MOVE 1 TO Wfin
-              NOT AT END
-               IF fp_dateA = dateA THEN
-                 PERFORM AFFICHER_PASS
-               ELSE                      
-                 MOVE 1 TO Wfin
-               END-IF
-              END-READ
-           END-PERFORM
-         END-START
+         	  DISPLAY "Pass correcte"
+         	  MOVE 1 TO Wtrouve
+        END-READ
         CLOSE fpass.
 
        RECHERCHE_PASS_ID.
@@ -609,6 +648,8 @@ PROCEDURE DIVISION.
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
           ACCEPT choix
         END-PERFORM.
+
+
 
       *>Gestion des groupes
        GESTION_GROUPES.
@@ -942,29 +983,16 @@ PROCEDURE DIVISION.
         END-IF.
 
         *>Gestion des scenes
-<<<<<<< HEAD
-               GESTION_SCENES.
-         PERFORM WITH TEST AFTER UNTIL choix = 0
-          PERFORM WITH TEST AFTER UNTIL choix< 9                 
 
-              DISPLAY "-------------------------------------------"
-              DISPLAY "|        BIENVENUE DANS LE MENU           |"
-              DISPLAY "|                                         |"
-              DISPLAY "|  1 -  Ajouter scene                     |"
-              DISPLAY "|  2 -  Afficher scene / edition          |"
-              DISPLAY "|  3 -  Supprimer scene                   |"
-              DISPLAY "|  4 -  Mofifier scene                    |"
-              DISPLAY "|  0 -  Quitter                           |"
-=======
            GESTION_SCENES.
-           PERFORM WITH TEST AFTER UNTIL choixMenu = 0
+           PERFORM WITH TEST AFTER UNTIL choix = 0
+             PERFORM WITH TEST AFTER UNTIL choix < 9
               DISPLAY " _______* Menu gestion des scènes *_______ "
               DISPLAY "|Annuler                  :              0|"
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
->>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
               DISPLAY "|_________________________________________|"
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
@@ -1288,10 +1316,13 @@ PROCEDURE DIVISION.
        CLOSE feditions.
        
        VERIF_EDITION.
-       READ feditions
-       INVALID KEY 
-         MOVE 0 TO Wtrouve
-       NOT INVALID KEY
-         MOVE 1 TO Wtrouve
-       END-READ.
+         OPEN INPUT feditions
+         READ feditions
+         INVALID KEY 
+           DISPLAY 'Il n''y a pas de festival à cette date'
+           MOVE 0 TO Wtrouve
+         NOT INVALID KEY
+           MOVE 1 TO Wtrouve
+         END-READ
+         CLOSE feditions.
        END PROGRAM projet.
