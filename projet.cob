@@ -79,14 +79,10 @@ FILE SECTION.
 
         FD freservations.
         01 fresTampon. 
-<<<<<<< HEAD
           02 fres_id            PIC 9(36).
-=======
-          02 fres_id            PIC 9(9).
->>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
           02 fres_nomPa         PIC A(30).
           02 fres_prenom        PIC A(30).
-          02 fres_dep           PIC X(2).
+          02 fres_dep           PIC 9(2).
           02 fres_dateA         PIC 9(4).
           02 fres_adresseEmail  PIC X(30).
           02 fres_numTel        PIC XXXXXXXXXX.
@@ -886,7 +882,7 @@ PROCEDURE DIVISION.
              NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL choixModifReserv < 1
                    DISPLAY ' _____* Modification représentation *____'
-                   DISPLAY '| Annuler                   :           0|'
+                   DISPLAY '| Quitter                   :           0|'
                    DISPLAY '| Le jour                   :           1|'
                    DISPLAY '| Heure de début            :           2|'      
                    DISPLAY '| Le nom du groupe          :           3|'
@@ -942,31 +938,15 @@ PROCEDURE DIVISION.
         END-IF.
 
         *>Gestion des scenes
-<<<<<<< HEAD
-               GESTION_SCENES.
-         PERFORM WITH TEST AFTER UNTIL choix = 0
-          PERFORM WITH TEST AFTER UNTIL choix< 9                 
 
-              DISPLAY "-------------------------------------------"
-              DISPLAY "|        BIENVENUE DANS LE MENU           |"
-              DISPLAY "|                                         |"
-              DISPLAY "|  1 -  Ajouter scene                     |"
-              DISPLAY "|  2 -  Afficher scene / edition          |"
-              DISPLAY "|  3 -  Supprimer scene                   |"
-              DISPLAY "|  4 -  Mofifier scene                    |"
-              DISPLAY "|  0 -  Quitter                           |"
-=======
            GESTION_SCENES.
            PERFORM WITH TEST AFTER UNTIL choixMenu = 0
               DISPLAY " _______* Menu gestion des scènes *_______ "
-              DISPLAY "|Annuler                  :              0|"
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
->>>>>>> 389b21e602b48e03809b5273bd8060a2671ed070
               DISPLAY "|_________________________________________|"
-              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
               ACCEPT choix
        
@@ -1063,12 +1043,11 @@ PROCEDURE DIVISION.
            OPEN I-O fscenes
            MOVE 1 TO choix 
            PERFORM WITH TEST AFTER UNTIL choix= 0
-              DISPLAY " ______* Modification des scènes *________"
+              DISPLAY " ________* Modification scènes *__________"
               DISPLAY "|Annuler              :                  0|"
               DISPLAY "|Modifier capicité    :                  1|"
               DISPLAY "|Modifier cout        :                  2|"
               DISPLAY "|_________________________________________|"
-              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
 
               ACCEPT choix
        
@@ -1182,15 +1161,13 @@ PROCEDURE DIVISION.
        GESTION_EDITIONS.
        PERFORM WITH TEST AFTER UNTIL choixMenu=0
          PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
-           DISPLAY "  ____* Menu gestion des éditions *_______"
+           DISPLAY "  _______________* Menu *_________________"
            DISPLAY " |Afficher les éditions :                0|"
            DISPLAY " |Ajout d'une éditions :                 1|"
            DISPLAY " |Modifier la capacité d'une édition :   2|"
            DISPLAY " |Modifier le nombre de jour              |"
            DISPLAY " |                       d'une édition : 3|"
            DISPLAY " |________________________________________|"
-           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
-
            ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1 PERFORM AFFICHER_EDITIONS
