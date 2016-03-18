@@ -1225,17 +1225,24 @@ PROCEDURE DIVISION.
        PERFORM WITH TEST AFTER UNTIL choixMenu=0
          PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
            DISPLAY "  _______________* Menu *_________________"
-           DISPLAY " |Afficher les éditions :                0|"
-           DISPLAY " |Ajout d'une éditions :                 1|"
-           DISPLAY " |Modifier la capacité d'une édition :   2|"
-           DISPLAY " |Modifier le nombre de jour              |"
-           DISPLAY " |                       d'une édition : 3|"
+           DISPLAY " |Afficher les éditions :                1|"
+           DISPLAY " |Ajout d'une éditions :                 2|"
+           DISPLAY " |Modifier la capacité d'une édition :   3|"
+           DISPLAY " |Supprimer une édition                  4|"
+           DISPLAY " |Afficher le résultat d'une édition     5|"
+           DISPLAY " |Afficher le cout moyen d'une scène     6|"
+           DISPLAY " |Afficher cout moyen des artistes       7|"
+           DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
            ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1 PERFORM AFFICHER_EDITIONS
              WHEN 2 PERFORM AJOUT_EDITIONS
              WHEN 3 PERFORM MODIFIER_CAPACITE
+             WHEN 4 PERFORM SUPPRIMER_EDITION
+             WHEN 5 PERFORM AFFICHAGE_RESULTAT_EDITION
+             WHEN 6 PERFORM AFFICHAGE_COUT_SCENES
+             WHEN 7 PERFORM AFFICHAGE_COUT_ARTISTES
            END-EVALUATE
          END-PERFORM
        END-PERFORM.
@@ -1277,15 +1284,10 @@ PROCEDURE DIVISION.
          READ feditions
          INVALID KEY
            PERFORM WITH TEST AFTER UNTIL fe_capacite IS NUMERIC AND
-       fe_capacite > 0
+       fe_capacite > 0 
              DISPLAY "Indiquez la capacité de l'édition : " WITH NO 
         ADVANCING
              ACCEPT fe_capacite
-           END-PERFORM
-           PERFORM WITH TEST AFTER UNTIL fe_nbJour > 1 AND fe_nbJour < 4
-       AND fe_nbJour IS NUMERIC
-             DISPLAY "Indiquez la durée du festival : " WITH NO ADVANCING
-             ACCEPT fe_nbJour
            END-PERFORM
            MOVE 0 TO fe_nbScene
            MOVE 0 TO fe_nbArtiste
@@ -1305,9 +1307,10 @@ PROCEDURE DIVISION.
 
        MODIFIER_CAPACITE.
        DISPLAY "*********"
+       DISPLAY "Choisissez l'edition : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
        OPEN I-O feditions
        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-         DISPLAY "Veuillez saisir l'année de l'édition : "
          ACCEPT fe_dateA
          READ feditions
          INVALID KEY
@@ -1328,13 +1331,89 @@ PROCEDURE DIVISION.
        CLOSE feditions.
        
        VERIF_EDITION.
-         OPEN INPUT feditions
+       READ feditions
+       INVALID KEY 
+         MOVE 0 TO Wtrouve
+       NOT INVALID KEY
+         MOVE 1 TO Wtrouve
+       END-READ.
+
+       SUPPRIMER_EDITION.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste: "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+         ACCEPT fe_dateA
          READ feditions
-         INVALID KEY 
-           DISPLAY 'Il n''y a pas de festival à cette date'
-           MOVE 0 TO Wtrouve
+         INVALID KEY
+           DISPLAY "Pas d'édition correspondante."
          NOT INVALID KEY
-           MOVE 1 TO Wtrouve
+           DISPLAY "Edition : ", fe_dateA
+           DISPLAY "Capacité : ", fe_capacite
+           DISPLAY "Nombre de scènes : ",fe_nbScene
+           DISPLAY "Nombre d'artistes : ",fe_nbArtiste
+           DISPLAY "Résas jour 1 : ",fe_nbResaJourUn
+           DISPLAY "Résas jour 2 : ",fe_nbResaJourDeux
+           DISPLAY "Résas jour 3 : ",fe_nbResaJourTrois
+           DISPLAY "Résultat de l'édition : ",fe_resultat
+           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+           DISPLAY "Coût moyen d'un artiste : ",fe_coutArtistes
+           DELETE feditions END-DELETE
+           DISPLAY "Cette édition a été supprimée"
          END-READ
-         CLOSE feditions.
-       END PROGRAM projet.
+       CLOSE feditions.
+
+       AFFICHAGE_ANNEES_EDITIONS.
+       OPEN I-O feditions 
+       MOVE 0 TO Wfin
+       PERFORM WITH TEST AFTER UNTIL Wfin = 1
+         READ feditions NEXT
+           AT END 
+             MOVE 1 TO Wfin
+           NOT AT END
+             DISPLAY "Année : ",fe_dateA
+         END-READ
+       END-PERFORM
+       CLOSE feditions.
+         
+       AFFICHAGE_RESULTAT_EDITION.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       ACCEPT fe_dateA
+       READ feditions
+         INVALID KEY
+           DISPLAY "Pas d'éditions à cette date."
+         NOT INVALID KEY
+           DISPLAY "Reslutat : ",fe_resultat
+       END-READ
+       CLOSE feditions.
+
+       AFFICHAGE_COUT_SCENES.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       ACCEPT fe_dateA
+       READ feditions
+         INVALID KEY
+           DISPLAY "Pas d'éditions à cette date."
+         NOT INVALID KEY
+           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+       END-READ
+       CLOSE feditions.
+
+       AFFICHAGE_COUT_ARTISTES.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       ACCEPT fe_dateA
+       READ feditions
+         INVALID KEY
+           DISPLAY "Pas d'éditions à cette date."
+         NOT INVALID KEY
+           DISPLAY "Coût moyen des artistes : ",fe_coutArtistes
+       END-READ
+       CLOSE feditions.
