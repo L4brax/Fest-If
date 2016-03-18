@@ -158,6 +158,7 @@ WORKING-STORAGE SECTION.
         77 Wtrouve   PIC 9(1).
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
+        77 styleGr PIC A(30).
         77 pos PIC 9.
         77 posFin PIC 9.
         77 nomDernier PIC A(30).
@@ -935,6 +936,7 @@ PROCEDURE DIVISION.
               DISPLAY 'Nom du groupe ?'
               ACCEPT nomGr
               MOVE 0 TO Wfin
+              MOVE 0 TO pos
               PERFORM WITH TEST AFTER UNTIL Wfin = 1 OR Wtrouve=1
               READ fgroupes
                 AT END MOVE 1 TO Wfin
@@ -942,6 +944,8 @@ PROCEDURE DIVISION.
                 IF fg_nom = nomGr THEN
                   MOVE 1 TO Wtrouve
                   DISPLAY 'trouvé'
+                ELSE
+                  COMPUTE pos = pos + 1
                 END-IF   
               END-READ
               END-PERFORM
@@ -957,13 +961,23 @@ PROCEDURE DIVISION.
               EVALUATE choixMenu
               WHEN 1 
                 DISPLAY 'Nouveau nom = '
-                ACCEPT fg_nom
+                ACCEPT nomGr
+                MOVE fg_style to styleGr
               WHEN 2 
                 DISPLAY 'Nouveau style = '
-                ACCEPT fg_style
+                ACCEPT styleGr
+                MOVE fg_nom to nomGr
               END-EVALUATE
               END-PERFORM
-              DISPLAY fgTampon
+              READ fgroupes
+              PERFORM WITH TEST AFTER UNTIL pos=0
+                READ fgroupes
+                NOT AT END
+                  COMPUTE pos = pos - 1
+                END-READ
+              END-PERFORM
+              MOVE nomGr to fg_nom
+              MOVE styleGr to fg_style
               REWRITE fgTampon END-REWRITE
               DISPLAY 'groupe modifié'
               CLOSE fgroupes
@@ -993,30 +1007,14 @@ PROCEDURE DIVISION.
        END-PERFORM.
 
        AJOUTER_NOUVELLE_REPRESENTATION.
-              OPEN INPUT frepresentations 
-              READ frepresentations
-              INVALID KEY
-              CLOSE frepresentations
               OPEN I-O frepresentations
-      *>PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+              MOVE 0 TO Wtrouve
+            PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
               DISPLAY 'Année ?'
-              ACCEPT frep_dateA
-                OPEN INPUT feditions
-                MOVE 0 TO Wfin
-                MOVE 0 TO Wtrouve
-                PERFORM WITH TEST AFTER UNTIL Wfin = 1 OR Wtrouve = 1
-                READ feditions
-                 AT END MOVE 1 TO Wfin
-                   DISPLAY 'Pas d''édition cette année'
-                 NOT AT END
-                  IF fe_dateA = frep_dateA THEN
-                    MOVE 1 TO Wtrouve
-                    DISPLAY 'L''année est valide'      
-                  END-IF
-                END-READ
-              END-PERFORM
-              CLOSE feditions
-      *>END-PERFORM
+              ACCEPT fe_dateA
+                PERFORM VERIF_EDITION
+            END-PERFORM
+            MOVE fe_dateA to frep_dateA
               PERFORM WITH TEST AFTER UNTIL frep_jour <= 3
                 DISPLAY 'Jour de la représentation ?'
                 ACCEPT frep_jour
@@ -1025,31 +1023,46 @@ PROCEDURE DIVISION.
                 DISPLAY 'Heure de début ? '
                 ACCEPT frep_heureDebut
               END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL Wtrouve = 0
+              MOVE 0 TO Wtrouve
+              PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
                 DISPLAY 'Nom du groupe ?'
-                ACCEPT frep_nomGr
+                ACCEPT nomGr
               PERFORM VERIF_NOM_GROUPE
               END-PERFORM
               MOVE nomGr TO frep_nomSce
+              MOVE 0 TO Wtrouve
+              PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
               DISPLAY 'Nom de la scène ?'
               ACCEPT frep_nomSce
+              OPEN INPUT fscenes
+               MOVE frep_nomSce to fs_nomSce
+                MOVE frep_dateA to fs_dateA               
+               READ fscenes
+                INVALID KEY 
+                 DISPLAY 'La scene n''existe pas '
+                NOT INVALID KEY 
+                 MOVE 1 TO Wtrouve
+                 DISPLAY 'La scene est présente' 
+               END-READ 
+              CLOSE fscenes
+              END-PERFORM
               PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
                 DISPLAY 'Cachet ?'
                 ACCEPT frep_cachet
               END-PERFORM
+              OPEN INPUT fscenes
+
+              Close fscenes
               PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax GREATER 0
                 DISPLAY 'Nombre de personne max ?'
                 ACCEPT frep_nbPersonneMax
               END-PERFORM
               WRITE frepTampon END-WRITE
-              NOT INVALID KEY
-                DISPLAY 'La représentation existe déjà'
+          
               CLOSE frepresentations.
 
         AFFICHER_REPRESENTATION.
-              OPEN I-O frepresentations
-              READ frepresentations
-              INVALID KEY                           
+              OPEN INPUT frepresentations                        
                 DISPLAY 'Année de l édition ?'
                 ACCEPT frep_dateA 
                 START frepresentations,
@@ -1121,7 +1134,12 @@ PROCEDURE DIVISION.
                       PERFORM WITH TEST AFTER UNTIL frep_jour >= 01 AND frep_jour <= 03
                          DISPLAY 'Donnez un jour (01, 02, 03)'
                          ACCEPT frep_jour
-                         REWRITE frepTampon END-REWRITE
+                         REWRITE frepTampon 
+                            INVALID KEY 
+                            DISPLAY "*** ERREUR INTERNE (rewrite)"
+                            NOT INVALID KEY
+                            DISPLAY "ok."
+                         END-REWRITE
                       END-PERFORM 
                    WHEN 2 
                       PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 
@@ -1387,17 +1405,24 @@ PROCEDURE DIVISION.
        PERFORM WITH TEST AFTER UNTIL choixMenu=0
          PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
            DISPLAY "  _______________* Menu *_________________"
-           DISPLAY " |Afficher les éditions :                0|"
-           DISPLAY " |Ajout d'une éditions :                 1|"
-           DISPLAY " |Modifier la capacité d'une édition :   2|"
-           DISPLAY " |Modifier le nombre de jour              |"
-           DISPLAY " |                       d'une édition : 3|"
+           DISPLAY " |Afficher les éditions :                1|"
+           DISPLAY " |Ajout d'une éditions :                 2|"
+           DISPLAY " |Modifier la capacité d'une édition :   3|"
+           DISPLAY " |Supprimer une édition                  4|"
+           DISPLAY " |Afficher le résultat d'une édition     5|"
+           DISPLAY " |Afficher le cout moyen d'une scène     6|"
+           DISPLAY " |Afficher cout moyen des artistes       7|"
+           DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
            ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1 PERFORM AFFICHER_EDITIONS
              WHEN 2 PERFORM AJOUT_EDITIONS
              WHEN 3 PERFORM MODIFIER_CAPACITE
+             WHEN 4 PERFORM SUPPRIMER_EDITION
+             WHEN 5 PERFORM AFFICHAGE_RESULTAT_EDITION
+             WHEN 6 PERFORM AFFICHAGE_COUT_SCENES
+             WHEN 7 PERFORM AFFICHAGE_COUT_ARTISTES
            END-EVALUATE
          END-PERFORM
        END-PERFORM.
@@ -1439,15 +1464,10 @@ PROCEDURE DIVISION.
          READ feditions
          INVALID KEY
            PERFORM WITH TEST AFTER UNTIL fe_capacite IS NUMERIC AND
-       fe_capacite > 0
+       fe_capacite > 0 
              DISPLAY "Indiquez la capacité de l'édition : " WITH NO 
         ADVANCING
              ACCEPT fe_capacite
-           END-PERFORM
-           PERFORM WITH TEST AFTER UNTIL fe_nbJour > 1 AND fe_nbJour < 4
-       AND fe_nbJour IS NUMERIC
-             DISPLAY "Indiquez la durée du festival : " WITH NO ADVANCING
-             ACCEPT fe_nbJour
            END-PERFORM
            MOVE 0 TO fe_nbScene
            MOVE 0 TO fe_nbArtiste
@@ -1467,9 +1487,10 @@ PROCEDURE DIVISION.
 
        MODIFIER_CAPACITE.
        DISPLAY "*********"
+       DISPLAY "Choisissez l'edition : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
        OPEN I-O feditions
        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-         DISPLAY "Veuillez saisir l'année de l'édition : "
          ACCEPT fe_dateA
          READ feditions
          INVALID KEY
@@ -1490,13 +1511,89 @@ PROCEDURE DIVISION.
        CLOSE feditions.
        
        VERIF_EDITION.
-         OPEN INPUT feditions
+       READ feditions
+       INVALID KEY 
+         MOVE 0 TO Wtrouve
+       NOT INVALID KEY
+         MOVE 1 TO Wtrouve
+       END-READ.
+
+       SUPPRIMER_EDITION.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste: "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+         ACCEPT fe_dateA
          READ feditions
-         INVALID KEY 
-           DISPLAY 'Il n''y a pas de festival à cette date'
-           MOVE 0 TO Wtrouve
+         INVALID KEY
+           DISPLAY "Pas d'édition correspondante."
          NOT INVALID KEY
-           MOVE 1 TO Wtrouve
+           DISPLAY "Edition : ", fe_dateA
+           DISPLAY "Capacité : ", fe_capacite
+           DISPLAY "Nombre de scènes : ",fe_nbScene
+           DISPLAY "Nombre d'artistes : ",fe_nbArtiste
+           DISPLAY "Résas jour 1 : ",fe_nbResaJourUn
+           DISPLAY "Résas jour 2 : ",fe_nbResaJourDeux
+           DISPLAY "Résas jour 3 : ",fe_nbResaJourTrois
+           DISPLAY "Résultat de l'édition : ",fe_resultat
+           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+           DISPLAY "Coût moyen d'un artiste : ",fe_coutArtistes
+           DELETE feditions END-DELETE
+           DISPLAY "Cette édition a été supprimée"
          END-READ
-         CLOSE feditions.
-       END PROGRAM projet.
+       CLOSE feditions.
+
+       AFFICHAGE_ANNEES_EDITIONS.
+       OPEN I-O feditions 
+       MOVE 0 TO Wfin
+       PERFORM WITH TEST AFTER UNTIL Wfin = 1
+         READ feditions NEXT
+           AT END 
+             MOVE 1 TO Wfin
+           NOT AT END
+             DISPLAY "Année : ",fe_dateA
+         END-READ
+       END-PERFORM
+       CLOSE feditions.
+         
+       AFFICHAGE_RESULTAT_EDITION.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       ACCEPT fe_dateA
+       READ feditions
+         INVALID KEY
+           DISPLAY "Pas d'éditions à cette date."
+         NOT INVALID KEY
+           DISPLAY "Reslutat : ",fe_resultat
+       END-READ
+       CLOSE feditions.
+
+       AFFICHAGE_COUT_SCENES.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       ACCEPT fe_dateA
+       READ feditions
+         INVALID KEY
+           DISPLAY "Pas d'éditions à cette date."
+         NOT INVALID KEY
+           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+       END-READ
+       CLOSE feditions.
+
+       AFFICHAGE_COUT_ARTISTES.
+       DISPLAY "*********"
+       DISPLAY "Choisissez l'edition parmi la liste : "
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       ACCEPT fe_dateA
+       READ feditions
+         INVALID KEY
+           DISPLAY "Pas d'éditions à cette date."
+         NOT INVALID KEY
+           DISPLAY "Coût moyen des artistes : ",fe_coutArtistes
+       END-READ
+       CLOSE feditions.
