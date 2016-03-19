@@ -267,6 +267,7 @@ PROCEDURE DIVISION.
               DISPLAY ' |Annuler                    :           0|'
               DISPLAY ' |Ajouter une reservation    :           1|'
               DISPLAY ' |Rechercher une reservation :           2|'
+              DISPLAY ' |Rechercher une reservation :           2|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
