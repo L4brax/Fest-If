@@ -1076,11 +1076,11 @@ PROCEDURE DIVISION.
             END-PERFORM
             MOVE fe_dateA to frep_dateA
               PERFORM WITH TEST AFTER UNTIL frep_jour <= 3
-                DISPLAY 'Jour de la représentation ?'
+                DISPLAY 'Jour de la représentation ? (01,02,03)'
                 ACCEPT frep_jour
               END-PERFORM
               PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 AND frep_heureDebut < 2400
-                DISPLAY 'Heure de début ? '
+                DISPLAY 'Heure de début ? au format (HHMM) '
                 ACCEPT frep_heureDebut
               END-PERFORM
               MOVE 0 TO Wtrouve
