@@ -1199,6 +1199,7 @@ PROCEDURE DIVISION.
             END-PERFORM
             MOVE fe_dateA to frep_dateA
               PERFORM WITH TEST AFTER UNTIL frep_jour <= 3
+<<<<<<< HEAD
                 DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
                 WITH NO ADVANCING
                 ACCEPT frep_jour
@@ -1206,6 +1207,13 @@ PROCEDURE DIVISION.
               PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 AND frep_heureDebut < 2400
                 DISPLAY 'Indiquer l''heure de début : '
                 WITH NO ADVANCING
+=======
+                DISPLAY 'Jour de la représentation ? (01,02,03)'
+                ACCEPT frep_jour
+              END-PERFORM
+              PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 AND frep_heureDebut < 2400
+                DISPLAY 'Heure de début ? au format (HHMM) '
+>>>>>>> 7d817049ecaa08d78028d6f05d8122a1185e3aeb
                 ACCEPT frep_heureDebut
               END-PERFORM
               MOVE 0 TO Wtrouve
