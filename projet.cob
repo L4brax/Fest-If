@@ -1016,7 +1016,9 @@ PROCEDURE DIVISION.
             PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
               DISPLAY 'Année ?'
               ACCEPT fe_dateA
+              OPEN INPUT feditions 
                 PERFORM VERIF_EDITION
+              CLOSE feditions
             END-PERFORM
             MOVE fe_dateA to frep_dateA
               PERFORM WITH TEST AFTER UNTIL frep_jour <= 3
