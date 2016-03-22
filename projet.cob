@@ -182,7 +182,9 @@ WORKING-STORAGE SECTION.
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
      *>  Statistiques
-        77 nbArtisteN PIC 9(1).
+        77 nbArtisteN PIC 9(3).
+        77 nbMoyArtiste PIC 9(3).
+        77 nbEdition PIC 9(3).
 
 PROCEDURE DIVISION.
 
@@ -692,6 +694,59 @@ PROCEDURE DIVISION.
          DISPLAY 'Impossible d''ajouter ce pass, il existe déjà.'
        CLOSE fpass.
 
+       GENERER_PASS.
+        OPEN I-O fpass 
+
+        DISPLAY 'Quel prix donnez vous au pass premier jour?'
+        MOVE 1 TO fp_nomPa
+        ACCEPT fp_prix
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        DISPLAY 'Quel prix donnez vous au pass deuxième jour?'
+        ACCEPT fp_prix
+        MOVE 2 TO fp_nomPa
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        DISPLAY 'Quel prix donnez vous au pass troisième jour?'
+        ACCEPT fp_prix
+        MOVE 3 TO fp_nomPa
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        DISPLAY 'Quel prix donnez vous au pass premier et deuxième jour?'
+        ACCEPT fp_prix
+        MOVE 12 TO fp_nomPa
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        DISPLAY 'Quel prix donnez vous au pass deuxième et troisième jour?'
+        ACCEPT fp_prix
+        MOVE 23 TO fp_nomPa
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        DISPLAY 'Quel prix donnez vous au pass premier et troisième jour?'
+        ACCEPT fp_prix
+        MOVE 13 TO fp_nomPa
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        DISPLAY 'Quel prix donnez vous au pass trois jours?'
+        ACCEPT fp_prix
+        MOVE 123 TO fp_nomPa
+        PERFORM VERIF_FORMAT_PRIX
+        WRITE fpassTampon END-WRITE
+
+        CLOSE fpass.
+
+        VERIF_FORMAT_PRIX.
+          PERFORM WITH TEST BEFORE UNTIL fp_prix > 0
+          DISPLAY 'Veuillez saisir une valeur numérique'
+          ACCEPT fp_prix
+          END-PERFORM.
+
        RECHERCHER_PASS.
        PERFORM WITH TEST AFTER UNTIL choix=0 
         PERFORM WITH TEST AFTER UNTIL choix<9                 
@@ -792,6 +847,34 @@ PROCEDURE DIVISION.
         NOT INVALID KEY
             PERFORM REECRIRE_PASS
        CLOSE fpass.
+
+       SUPPRIMER_PASS_EDITION.
+         OPEN I-O fpass
+         MOVE 0 TO Wfin
+         MOVE 0 TO Wtrouve
+         MOVE 0 TO Wtrouve
+         OPEN INPUT fpass 
+         MOVE fp_dateA TO dateA
+         START fpass, KEY = fp_dateA
+           INVALID KEY 
+                DISPLAY "Il n'y a aucun pass d'ajouté " 
+          "pour cet edition."
+           NOT INVALID KEY
+           MOVE 1 TO Wtrouve
+             PERFORM WITH TEST AFTER UNTIL  Wfin = 1
+                READ fpass NEXT RECORD
+                AT END MOVE 1 TO Wfin
+                NOT AT END
+                 IF fp_dateA = dateA THEN
+                   DELETE fpass END-DELETE
+                 ELSE                      
+                   MOVE 1 TO Wfin
+                 END-IF
+                END-READ
+             END-PERFORM
+           END-START
+           CLOSE fpass
+          CLOSE fpass.
 
        REECRIRE_PASS.
         PERFORM CHOIX_MODIF_PASS
@@ -905,6 +988,7 @@ PROCEDURE DIVISION.
               WHEN 4 PERFORM MODIFIER_GROUPE
               WHEN 5 PERFORM NB_ARTISTE_EDITION
               WHEN 6 PERFORM EVO_ARTISTE_EDITION
+              WHEN 7 PERFORM MOY_NB_ARTISTE
               END-EVALUATE
         END-PERFORM
        END-PERFORM.
@@ -1086,6 +1170,17 @@ PROCEDURE DIVISION.
                 ACCEPT nomGr
               PERFORM VERIF_NOM_GROUPE
               END-PERFORM
+              *> Incrémentation du nombre d'artiste
+              OPEN I-O feditions
+                 READ feditions
+                 INVALID KEY
+                   DISPLAY "Aucune édition à cette date."
+                 NOT INVALID KEY
+                  COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                   REWRITE fedTampon
+                 END-READ
+               CLOSE feditions
+
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1574,6 +1669,8 @@ PROCEDURE DIVISION.
            MOVE 0 TO fe_resultat
            MOVE 0 TO fe_coutMoyenScene
            MOVE 0 TO fe_coutArtistes
+           MOVE fe_dateA TO fp_dateA
+           PERFORM GENERER_PASS
            WRITE fedTampon
            MOVE 1 TO Wtrouve
         NOT INVALID KEY
@@ -1625,16 +1722,9 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'édition correspondante."
          NOT INVALID KEY
-           DISPLAY "Edition : ", fe_dateA
-           DISPLAY "Capacité : ", fe_capacite
-           DISPLAY "Nombre de scènes : ",fe_nbScene
-           DISPLAY "Nombre d'artistes : ",fe_nbArtiste
-           DISPLAY "Résas jour 1 : ",fe_nbResaJourUn
-           DISPLAY "Résas jour 2 : ",fe_nbResaJourDeux
-           DISPLAY "Résas jour 3 : ",fe_nbResaJourTrois
-           DISPLAY "Résultat de l'édition : ",fe_resultat
-           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
-           DISPLAY "Coût moyen d'un artiste : ",fe_coutArtistes
+           PERFORM AFFICHER_EDITION
+           MOVE fe_dateA TO fp_dateA
+           PERFORM SUPPRIMER_PASS_EDITION
            DELETE feditions END-DELETE
            DISPLAY "Cette édition a été supprimée"
          END-READ
@@ -1717,6 +1807,24 @@ PROCEDURE DIVISION.
        END-READ
        CLOSE feditions.
 
+       MOY_NB_ARTISTE.
+       OPEN INPUT feditions
+       MOVE 0 TO Wfin
+       MOVE 0 TO nbEdition
+       MOVE 0 TO nbMoyArtiste
+       PERFORM WITH TEST AFTER UNTIL Wfin=1
+         READ feditions NEXT
+           AT END
+             MOVE 1 TO Wfin
+           NOT AT END
+            COMPUTE nbEdition = nbEdition + 1
+            COMPUTE nbMoyArtiste = nbMoyArtiste + fe_nbArtiste
+         END-READ
+       END-PERFORM
+       COMPUTE nbMoyArtiste = nbMoyArtiste / nbEdition
+       DISPLAY "Nombre moyen d artiste : ", nbMoyArtiste
+       CLOSE feditions.
+
        AFFICHAGE_COUT_ARTISTES.
        DISPLAY "*********"
        DISPLAY "Choisissez l'edition parmi la liste : "
@@ -1730,4 +1838,6 @@ PROCEDURE DIVISION.
            DISPLAY "Coût moyen des artistes : ",fe_coutArtistes
        END-READ
        CLOSE feditions.
+
+       
        
