@@ -175,6 +175,9 @@ WORKING-STORAGE SECTION.
         77 Wyear PIC 9(4).
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
+     *>  Statistiques
+        77 nbArtisteN PIC 9(1).
+
 PROCEDURE DIVISION.
 
       *> Vérifiaction présence des fichiers 
@@ -846,6 +849,8 @@ PROCEDURE DIVISION.
               DISPLAY ' |Afficher les groupes      :            2|'
               DISPLAY ' |Supprimer un groupe       :            3|'
               DISPLAY ' |Modifier un groupe        :            4|'
+              DISPLAY ' |Afficher le nombre de groupe/edition : 5|'
+              DISPLAY ' |Evolution deux années successives :    6|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
@@ -854,6 +859,8 @@ PROCEDURE DIVISION.
               WHEN 2 PERFORM AFFICHER_GROUPES
               WHEN 3 PERFORM SUPPRIMER_GROUPE
               WHEN 4 PERFORM MODIFIER_GROUPE
+              WHEN 5 PERFORM NB_ARTISTE_EDITION
+              WHEN 6 PERFORM EVO_ARTISTE_EDITION
               END-EVALUATE
         END-PERFORM
        END-PERFORM.
@@ -1589,6 +1596,40 @@ PROCEDURE DIVISION.
            DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
        END-READ
        CLOSE feditions.
+       *>Statistiques
+       NB_ARTISTE_EDITION.
+        DISPLAY 'Année ?'
+        ACCEPT fe_dateA
+        OPEN INPUT feditions 
+       READ feditions
+       INVALID KEY 
+         DISPLAY 'pas d édition cette année'
+       NOT INVALID KEY
+         DISPLAY 'Nombre d artiste : ', fe_nbArtiste
+       END-READ
+       CLOSE feditions.
+
+       EVO_ARTISTE_EDITION.
+        DISPLAY 'Année de la deuxième édition : '
+        ACCEPT fe_dateA
+        OPEN INPUT feditions 
+       READ feditions
+       INVALID KEY 
+         DISPLAY 'pas d édition cette année'
+       NOT INVALID KEY
+         DISPLAY 'Nombre d artiste N: ', fe_nbArtiste
+         MOVE fe_nbArtiste TO nbArtisteN
+        COMPUTE fe_dateA = fe_dateA - 1
+         READ feditions
+         INVALID KEY 
+           DISPLAY 'pas d édition cette année'
+         NOT INVALID KEY
+           DISPLAY 'Nombre d artiste N-1: ', fe_nbArtiste
+           COMPUTE nbArtisteN = nbArtisteN - fe_nbArtiste
+           DISPLAY 'Evolution : ', nbArtisteN
+         END-READ
+       END-READ
+       CLOSE feditions.
 
        AFFICHAGE_COUT_ARTISTES.
        DISPLAY "*********"
@@ -1603,3 +1644,4 @@ PROCEDURE DIVISION.
            DISPLAY "Coût moyen des artistes : ",fe_coutArtistes
        END-READ
        CLOSE feditions.
+       
