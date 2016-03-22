@@ -182,7 +182,9 @@ WORKING-STORAGE SECTION.
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
      *>  Statistiques
-        77 nbArtisteN PIC 9(1).
+        77 nbArtisteN PIC 9(3).
+        77 nbMoyArtiste PIC 9(3).
+        77 nbEdition PIC 9(3).
 
 PROCEDURE DIVISION.
 
@@ -986,6 +988,7 @@ PROCEDURE DIVISION.
               WHEN 4 PERFORM MODIFIER_GROUPE
               WHEN 5 PERFORM NB_ARTISTE_EDITION
               WHEN 6 PERFORM EVO_ARTISTE_EDITION
+              WHEN 7 PERFORM MOY_NB_ARTISTE
               END-EVALUATE
         END-PERFORM
        END-PERFORM.
@@ -1167,6 +1170,17 @@ PROCEDURE DIVISION.
                 ACCEPT nomGr
               PERFORM VERIF_NOM_GROUPE
               END-PERFORM
+              *> Incrémentation du nombre d'artiste
+              OPEN I-O feditions
+                 READ feditions
+                 INVALID KEY
+                   DISPLAY "Aucune édition à cette date."
+                 NOT INVALID KEY
+                  COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                   REWRITE fedTampon
+                 END-READ
+               CLOSE feditions
+
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1794,6 +1808,24 @@ PROCEDURE DIVISION.
          END-READ
 
        END-READ
+       CLOSE feditions.
+
+       MOY_NB_ARTISTE.
+       OPEN INPUT feditions
+       MOVE 0 TO Wfin
+       MOVE 0 TO nbEdition
+       MOVE 0 TO nbMoyArtiste
+       PERFORM WITH TEST AFTER UNTIL Wfin=1
+         READ feditions NEXT
+           AT END
+             MOVE 1 TO Wfin
+           NOT AT END
+            COMPUTE nbEdition = nbEdition + 1
+            COMPUTE nbMoyArtiste = nbMoyArtiste + fe_nbArtiste
+         END-READ
+       END-PERFORM
+       COMPUTE nbMoyArtiste = nbMoyArtiste / nbEdition
+       DISPLAY "Nombre moyen d artiste : ", nbMoyArtiste
        CLOSE feditions.
 
        AFFICHAGE_COUT_ARTISTES.
