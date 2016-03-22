@@ -1388,15 +1388,13 @@ PROCEDURE DIVISION.
        END-PERFORM.  
 
 
-       *> FONCTION OK PLUS RIEN A TOUCHER SAUF OPTIMISATION OUVERTURE 
-       *> DEMANDER A ANTOINE SO POSSIBILITE DE MODIFIER SA PROCEDURE 
-       *> NOMME "VERIF EDITION"  
 
        *> Modification sur l'édition
        *> Sur le cout moyen d'une scene 
        *> Sur le resultat du festival 
        AJOUT_SCENES.
        MOVE 0 TO Wtrouve 
+       OPEN I-O feditions 
        DISPLAY "Saisir l'année"
        ACCEPT fe_dateA
        PERFORM VERIF_EDITION
@@ -1419,7 +1417,6 @@ PROCEDURE DIVISION.
             INVALID KEY DISPLAY 'Scène non enregistré'
             *> Si la scene abin été renregistré 
             NOT INVALID KEY DISPLAY 'Scene enregistré'
-              OPEN I-O feditions 
               *> On initialise les variables temporaires
               MOVE 0 TO WnbScene
               MOVE 0 TO WResTemp
@@ -1448,8 +1445,7 @@ PROCEDURE DIVISION.
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
               NOT INVALID KEY DISPLAY 'Edition mise à jour'
               END-REWRITE
-              CLOSE feditions
-             
+  
             END-WRITE 
             CLOSE fscenes
          PERFORM AFFICHER_SCENES
@@ -1463,7 +1459,8 @@ PROCEDURE DIVISION.
          DISPLAY "Edition inconnue, vérifier qu'une édition à été créée"
          "pour l'année spécifiée avant d'ajouter une scène"
 
-       END-IF.
+       END-IF
+       CLOSE feditions.
 
          
        AFFICHER_SCENES_ANNEE.
