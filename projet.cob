@@ -127,7 +127,7 @@ FILE SECTION.
           02 fe_nbResaJourUn PIC 9(4).
           02 fe_nbResaJourDeux PIC 9(4). 
           02 fe_nbResaJourTrois PIC 9(4). 
-          02 fe_resultat PIC 9(30). 
+          02 fe_resultat PIC S9(30). 
           02 fe_coutMoyenScene PIC 9(30). 
           02 fe_coutArtistes PIC 9(30). 
                   
@@ -156,6 +156,7 @@ WORKING-STORAGE SECTION.
         77 m         PIC 99.
         77 y         PIC 9999.
         77 Wtrouve   PIC 9(1).
+        77 Wprix     PIC 9(4).
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
         77 styleGr PIC A(30).
@@ -164,7 +165,12 @@ WORKING-STORAGE SECTION.
         77 nomDernier PIC A(30).
         77 styleDernier PIC A(30).
         77 choixModifReserv PIC 9(2).
-    	*>Variable scenes
+    	*>VARIABLES SCENE 
+        77 WnbScene PIC 9(2).
+        77 WResTemp PIC S9(30).
+        77 WCouTemp PIC 9(30).
+
+
       *> SUPPRIMER_SCENE
         77 WrepSc PIC 9(1).
         *>AJOUT_SCENES 
@@ -802,7 +808,10 @@ PROCEDURE DIVISION.
                 ACCEPT fp_dateA
               WHEN 3 
                 DISPLAY 'Quelle est le nouveau prix?'
-                ACCEPT fp_prix
+                ACCEPT Wprix
+                MOVE fp_dateA TO fe_dateA
+                PERFORM MAJ_PRIX_PASS_EDITION
+                MOVE Wprix TO fp_prix
             END-EVALUATE
        IF choix = 1 OR choix = 2 THEN
          WRITE fpassTampon
@@ -819,6 +828,41 @@ PROCEDURE DIVISION.
            DISPLAY "Pass modifié"
          END-REWRITE
        END-IF.
+
+       MAJ_PRIX_PASS_EDITION.
+         OPEN I-O feditions
+         READ feditions
+         INVALID KEY 
+          DISPLAY 'La clé a été altérée'
+         NOT INVALID KEY 
+          MOVE fp_dateA TO dateA
+          START fpass, KEY = fp_dateA
+           INVALID KEY 
+                DISPLAY "Il n'y a aucune réservation à mettre à jour " 
+           NOT INVALID KEY
+           MOVE 1 TO Wtrouve
+             PERFORM WITH TEST AFTER UNTIL  Wfin = 1
+                READ fpass NEXT RECORD
+                AT END MOVE 1 TO Wfin
+                NOT AT END
+                 IF fp_dateA = dateA THEN
+                   COMPUTE fe_resultat = fe_resultat - fp_prix + Wprix
+                 ELSE                      
+                   MOVE 1 TO Wfin
+                 END-IF
+                END-READ
+             END-PERFORM
+           END-START
+        END-READ
+        REWRITE fedTampon
+        INVALID KEY
+          DISPLAY 'Erreur lors de la mise à jour de l''édition'
+        NOT INVALID KEY 
+          DISPLAY 'Résultat modifié avec succès'
+        END-REWRITE
+        CLOSE feditions.
+
+
 
        AFFICHER_PASS.
         DISPLAY '_________________________________________'
@@ -1234,26 +1278,14 @@ PROCEDURE DIVISION.
           END-PERFORM.    
 
        VERIF_SCENES. 
-       OPEN INPUT fscenes
        MOVE 0 TO Wtrouve
-
-       DISPLAY 'Saisir nom de la scene :'
-       ACCEPT fs_nomSce
-
-       PERFORM WITH TEST AFTER UNTIL fs_dateA > 1000
-        DISPLAY 'Saisir Annee au format YYYY ' 
-        ACCEPT fs_dateA
-       END-PERFORM  
-       
        READ fscenes
         INVALID KEY 
          DISPLAY 'La scene n''existe pas '
         NOT INVALID KEY 
          MOVE 1 TO Wtrouve
          DISPLAY 'La scene est présente' 
-       END-READ 
-
-       CLOSE fscenes.
+       END-READ.
 
 
        SUPPRIMER_SCENE. 
@@ -1290,7 +1322,6 @@ PROCEDURE DIVISION.
             READ frepresentations NEXT 
             AT END 
               MOVE 1 TO WFin
-              DISPLAY "Fin "
            NOT AT END   
               IF frep_dateA = fs_dateA
                 MOVE 1 TO Wprog
@@ -1304,7 +1335,7 @@ PROCEDURE DIVISION.
        IF wTrouve = 1 
         PERFORM VERIF_SCENES
         IF Wtrouve = 0 
-          DISPLAY "modification impossible"
+          DISPLAY "modification impossible scene non enregistrée"
         ELSE 
          PERFORM VERIF_PROGRAMME_SCENE    
          IF Wprog = 1
@@ -1359,6 +1390,10 @@ PROCEDURE DIVISION.
             ACCEPT fs_capacite
        END-PERFORM.  
 
+
+       *> Modification sur l'édition
+       *> Sur le cout moyen d'une scene 
+       *> Sur le resultat du festival 
        MODIFIER_SCENE_COUT.
        MOVE 0 TO fs_cout
        PERFORM WITH TEST AFTER UNTIL fs_cout > 0
@@ -1366,35 +1401,81 @@ PROCEDURE DIVISION.
          ACCEPT fs_cout
        END-PERFORM.  
 
+
+       *> FONCTION OK PLUS RIEN A TOUCHER SAUF OPTIMISATION OUVERTURE 
+       *> DEMANDER A ANTOINE SO POSSIBILITE DE MODIFIER SA PROCEDURE 
+       *> NOMME "VERIF EDITION"  
+
+       *> Modification sur l'édition
+       *> Sur le cout moyen d'une scene 
+       *> Sur le resultat du festival 
        AJOUT_SCENES.
+       MOVE 0 TO Wtrouve 
        DISPLAY "Saisir l'année"
        ACCEPT fe_dateA
-       OPEN INPUT feditions 
        PERFORM VERIF_EDITION
-       CLOSE feditions
-
+      *> Si on a trouver l'edition 
        IF Wtrouve = 1
-        PERFORM VERIF_SCENES
-        IF Wtrouve = 0 
+        MOVE 0 TO Wtrouve
         OPEN I-O fscenes
+        DISPLAY "Saisir le nom de la scène"
+        ACCEPT fs_nomSce
+        MOVE fe_dateA TO fs_dateA
+        PERFORM VERIF_SCENES
+        *> Si la scene est inexistante  
+        IF Wtrouve = 0 
 
-        PERFORM MODIFIER_SCENE_COUT
-        PERFORM MODIFIER_SCENE_CAPACITE
-      
-        WRITE fscTampon  
-          INVALID KEY DISPLAY 'Scène non enregistré'
-          NOT INVALID KEY DISPLAY 'Scene enregistré'
-        END-WRITE 
- 
-        PERFORM AFFICHER_SCENES
-        CLOSE fscenes
+         PERFORM MODIFIER_SCENE_COUT
+         PERFORM MODIFIER_SCENE_CAPACITE
+         *> Apres modification on ajoute la scene 
+
+          WRITE fscTampon  
+            INVALID KEY DISPLAY 'Scène non enregistré'
+            *> Si la scene abin été renregistré 
+            NOT INVALID KEY DISPLAY 'Scene enregistré'
+              OPEN I-O feditions 
+              *> On initialise les variables temporaires
+              MOVE 0 TO WnbScene
+              MOVE 0 TO WResTemp
+              MOVE 0 TO WCouTemp
+
+              *> On met a jour le nombre de  scene + le res de l'edition
+              *> Et le cout moyen 
+              MOVE fe_nbScene TO WnbScene
+              MOVE fe_resultat TO WResTemp
+              *> On calcul le cout total avant ajout 
+              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
+              *> On ajoute le cout de la nouvelle scene  
+              COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE
+              *> On augmente le nombre de scene 
+              COMPUTE WnbScene = WnbScene + 1 END-COMPUTE 
+              *> On recalcul la moyenne 
+              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
+              *> On met à jour le resultat du festival
+              COMPUTE WResTemp = WResTemp - fs_cout END-COMPUTE 
+
+              MOVE WResTemp TO fe_resultat
+              MOVE WnbScene TO fe_nbScene
+              MOVE WCouTemp TO fe_coutMoyenScene
+
+              REWRITE fedTampon
+              INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
+              NOT INVALID KEY DISPLAY 'Edition mise à jour'
+              END-REWRITE
+              CLOSE feditions
+             
+            END-WRITE 
+            CLOSE fscenes
+         PERFORM AFFICHER_SCENES
+         PERFORM AFFICHER_EDITION
         ELSE 
-          DISPLAY 'La scène existe déjà'
+          DISPLAY 'Ajout impossible, scène existante'
         END-IF
+      *> Si edition non trouvé
        ELSE 
        
-       DISPLAY "Edition inconnue, vérifier qu'une édition à été créée"
-       " pour l'année spécifiée"
+         DISPLAY "Edition inconnue, vérifier qu'une édition à été créée"
+         "pour l'année spécifiée avant d'ajouter une scène"
 
        END-IF.
 
@@ -1464,7 +1545,13 @@ PROCEDURE DIVISION.
            AT END
              MOVE 1 TO Wfin
            NOT AT END
-             DISPLAY "___________________________________________"
+            PERFORM AFFICHER_EDITION
+         END-READ
+       END-PERFORM
+       CLOSE feditions.
+
+       AFFICHER_EDITION.
+         DISPLAY "___________________________________________"
              DISPLAY "Edition ",fe_dateA
              DISPLAY "Capacité : ",fe_capacite
              DISPLAY "Nombre de scènes : ",fe_nbScene
@@ -1474,10 +1561,10 @@ PROCEDURE DIVISION.
              DISPLAY "Nombre de réservation jour 2 : ",fe_nbResaJourTrois
              DISPLAY "Résultat final : ",fe_resultat," euros"
              DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
-             DISPLAY "Cachet moyen : ",fe_coutArtistes
-         END-READ
-       END-PERFORM
-       CLOSE feditions.
+             DISPLAY "Cachet moyen : ",fe_coutArtistes.
+
+
+
 
        AJOUT_EDITIONS.
        DISPLAY "Ajout d'une édition"
@@ -1636,12 +1723,14 @@ PROCEDURE DIVISION.
         COMPUTE fe_dateA = fe_dateA - 1
          READ feditions
          INVALID KEY 
-           DISPLAY 'pas d édition cette année'
+           DISPLAY "Aucune édition pour l''année spécifiée"
+           MOVE 0 TO Wtrouve
          NOT INVALID KEY
            DISPLAY 'Nombre d artiste N-1: ', fe_nbArtiste
            COMPUTE nbArtisteN = nbArtisteN - fe_nbArtiste
            DISPLAY 'Evolution : ', nbArtisteN
          END-READ
+
        END-READ
        CLOSE feditions.
 
