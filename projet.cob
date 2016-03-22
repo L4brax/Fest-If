@@ -156,6 +156,7 @@ WORKING-STORAGE SECTION.
         77 m         PIC 99.
         77 y         PIC 9999.
         77 Wtrouve   PIC 9(1).
+        77 Wprix     PIC 9(4).
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
         77 styleGr PIC A(30).
@@ -797,7 +798,10 @@ PROCEDURE DIVISION.
                 ACCEPT fp_dateA
               WHEN 3 
                 DISPLAY 'Quelle est le nouveau prix?'
-                ACCEPT fp_prix
+                ACCEPT Wprix
+                MOVE fp_dateA TO fe_dateA
+                PERFORM MAJ_PRIX_PASS_EDITION
+                MOVE Wprix TO fp_prix
             END-EVALUATE
        IF choix = 1 OR choix = 2 THEN
          WRITE fpassTampon
@@ -814,6 +818,41 @@ PROCEDURE DIVISION.
            DISPLAY "Pass modifié"
          END-REWRITE
        END-IF.
+
+       MAJ_PRIX_PASS_EDITION.
+         OPEN I-O feditions
+         READ feditions
+         INVALID KEY 
+          DISPLAY 'La clé a été altérée'
+         NOT INVALID KEY 
+          MOVE fp_dateA TO dateA
+          START fpass, KEY = fp_dateA
+           INVALID KEY 
+                DISPLAY "Il n'y a aucune réservation à mettre à jour " 
+           NOT INVALID KEY
+           MOVE 1 TO Wtrouve
+             PERFORM WITH TEST AFTER UNTIL  Wfin = 1
+                READ fpass NEXT RECORD
+                AT END MOVE 1 TO Wfin
+                NOT AT END
+                 IF fp_dateA = dateA THEN
+                   COMPUTE fe_resultat = fe_resultat - fp_prix + Wprix
+                 ELSE                      
+                   MOVE 1 TO Wfin
+                 END-IF
+                END-READ
+             END-PERFORM
+           END-START
+        END-READ
+        REWRITE fedTampon
+        INVALID KEY
+          DISPLAY 'Erreur lors de la mise à jour de l''édition'
+        NOT INVALID KEY 
+          DISPLAY 'Résultat modifié avec succès'
+        END-REWRITE
+        CLOSE feditions.
+
+
 
        AFFICHER_PASS.
         DISPLAY '_________________________________________'
