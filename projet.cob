@@ -177,6 +177,10 @@ WORKING-STORAGE SECTION.
         77 WnomSc PIC A(4).
      *> MODIFIER_SCENE
         77 Wprog PIC 9(1).
+     *> MOFIFIER CAPACITER SCENE
+     *> Correspond au nombre de personne max 
+     *> present sur un scene pour toute les representation  
+        77 WnbMax PIC 9(2).   
      *> ANNEE 
         77 Wyear PIC 9(4).
         77 conf PIC 9(1). 
@@ -1584,8 +1588,29 @@ PROCEDURE DIVISION.
        
 
        MODIFIER_SCENE_CAPACITE.
-
-
+       *>  On initialisa notre variable max 
+       MOVE 0 TO WnbMax
+           OPEN INPUT frepresentations                        
+                MOVE fs_dateA TO frep_dateA 
+                START frepresentations,
+                KEY = frep_dateA
+                  INVALID KEY
+                    DISPLAY 'Pas de représentation'
+                    MOVE 1 TO Wfin
+                  NOT INVALID KEY
+                PERFORM WITH TEST AFTER UNTIL Wfin = 1
+                  READ frepresentations NEXT RECORD
+                  AT END
+                    DISPLAY "C'est tout!"
+                    MOVE 1 TO Wfin
+                  NOT AT END
+                    IF frep_nomSce = fs_nomSce AND WnbMax < frep_nbPersonneMax
+                            MOVE frep_nbPersonneMax TO WnbMax
+                    END-IF
+                  END-READ
+                END-PERFORM
+                 END-START
+                CLOSE frepresentations.
 
        DISPLAY "FIN".
 
