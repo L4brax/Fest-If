@@ -1743,11 +1743,16 @@ PROCEDURE DIVISION.
                   END-READ
                 END-PERFORM
                  END-START
-                CLOSE frepresentations.
+                CLOSE frepresentations
+                MOVE 0 TO fs_capacite
+           PERFORM WITH TEST AFTER UNTIL fs_capacite > 0 AND fs_capacite<99
+            DISPLAY 'Saisir une capacite supérieure à', WnbMax 'et inférieure à 99'
+            DISPLAY WnbMax,' correpond au nombre maximum de personne présente '
+            'pour les représentations programmées'
+            ACCEPT fs_capacite
+           END-PERFORM.    
 
-       DISPLAY "FIN".
-
-
+          .
 
 
 
@@ -1888,8 +1893,8 @@ PROCEDURE DIVISION.
       *> Gestion editions
 
        GESTION_EDITIONS.
-       PERFORM WITH TEST AFTER UNTIL choixMenu=0
-         PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
+       PERFORM WITH TEST AFTER UNTIL choix=0
+         PERFORM WITH TEST AFTER UNTIL choix<9                 
            DISPLAY "  _______________* Menu *_________________"
            DISPLAY " |Afficher les éditions :                1|"
            DISPLAY " |Ajout d'une éditions :                 2|"
@@ -1900,8 +1905,8 @@ PROCEDURE DIVISION.
            DISPLAY " |Afficher cout moyen des artistes       7|"
            DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
-           ACCEPT choixMenu
-           EVALUATE choixMenu
+           ACCEPT choix
+           EVALUATE choix
              WHEN 1 PERFORM AFFICHER_EDITIONS
              WHEN 2 PERFORM AJOUT_EDITIONS
              WHEN 3 PERFORM MODIFIER_CAPACITE
