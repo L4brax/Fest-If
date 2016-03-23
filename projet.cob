@@ -1347,7 +1347,7 @@ PROCEDURE DIVISION.
        
               EVALUATE choix
                WHEN 1 PERFORM AJOUT_SCENES
-               WHEN 2 PERFORM AFFICHER_SCENES_ANNEE
+               WHEN 2 OPEN INPUT fscenes PERFORM AFFICHER_SCENES_ANNEE CLOSE fscenes
                WHEN 3 PERFORM SUPPRIMER_SCENE
                WHEN 4 PERFORM MODIFIER_SCENE
               END-EVALUATE
@@ -1370,25 +1370,66 @@ PROCEDURE DIVISION.
 
 
        SUPPRIMER_SCENE. 
+       OPEN I-O fscenes
+       PERFORM AFFICHER_SCENES_ANNEE
+       DISPLAY "Saisir le nom de la scene"
+       ACCEPT fs_nomSce
        PERFORM VERIF_SCENES
-       MOVE 0 TO WrepSc
+    
        IF Wtrouve = 0 
         DISPLAY 'La scene spécifié n''existe pas' 
        ELSE 
-         PERFORM VERIF_PROGRAMME_SCENE 
+         PERFORM VERIF_PROGRAMME_SCENE
+         
         IF Wprog = 1 
           DISPLAY "Impossible de supprimer la scene " 
           DISPLAY "Représentation programmé !"
         ELSE 
-          OPEN I-O fscenes
+              OPEN I-O feditions
+             *> Si la scene existe et n'a pas de représentation programmé 
+              *> On initialise les variables temporaires
+              MOVE fs_dateA TO fe_dateA
+              MOVE 0 TO WnbScene
+              MOVE 0 TO WResTemp
+              MOVE 0 TO WCouTemp
+
+              *> On met a jour le nombre de  scene + le res de l'edition
+              *> Et le cout moyen 
+              MOVE fe_nbScene TO WnbScene
+              MOVE fe_resultat TO WResTemp
+              *> On calcul le cout total avant ajout 
+              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
+              *> On enlève le cout de la nouvelle scene  
+              COMPUTE WCouTemp = WCouTemp - fs_cout END-COMPUTE
+              *> On décrémente le nombre de scene 
+              COMPUTE WnbScene = WnbScene - 1 END-COMPUTE 
+              *> On recalcul la moyenne 
+              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
+              *> On met à jour le resultat du festival
+              COMPUTE WResTemp = WResTemp + fs_cout END-COMPUTE 
+
+              MOVE WResTemp TO fe_resultat
+              MOVE WnbScene TO fe_nbScene
+              MOVE WCouTemp TO fe_coutMoyenScene
+
+              REWRITE fedTampon
+              INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
+              NOT INVALID KEY DISPLAY 'Edition mise à jour'
+              END-REWRITE
+
+              DISPLAY "Etat de l'édition"
+              PERFORM AFFICHER_EDITION
+
+              CLOSE feditions
+
             DELETE fscenes RECORD
             INVALID KEY 
               DISPLAY "Impossible de supprimer "
             NOT INVALID KEY 
               DISPLAY "Supprimer"  
-          CLOSE fscenes
         END-IF
-       END-IF. 
+       END-IF
+       CLOSE fscenes. 
 
        VERIF_PROGRAMME_SCENE. 
        MOVE 0 TO Wprog
@@ -1408,21 +1449,19 @@ PROCEDURE DIVISION.
                 MOVE 1 TO Wprog
               END-IF
           END-PERFORM  
+       END-START    
        CLOSE frepresentations.
 
 
        MODIFIER_SCENE.
+       OPEN I-O fscenes
        PERFORM AFFICHER_SCENES_ANNEE
-       IF wTrouve = 1 
+        DISPLAY "Saisir le nom de la scene à modifier"
+        ACCEPT fs_nomSce
         PERFORM VERIF_SCENES
         IF Wtrouve = 0 
           DISPLAY "modification impossible scene non enregistrée"
         ELSE 
-         PERFORM VERIF_PROGRAMME_SCENE    
-         IF Wprog = 1
-           DISPLAY 'Il y a une représentation programmée sur la scène'
-         ELSE 
-           OPEN I-O fscenes
            MOVE 1 TO choix 
            PERFORM WITH TEST AFTER UNTIL choix= 0
               DISPLAY " ________* Modification scènes *__________"
@@ -1449,11 +1488,8 @@ PROCEDURE DIVISION.
            END-REWRITE 
  
            PERFORM AFFICHER_SCENES
-           CLOSE fscenes
-         END-IF
-          DISPLAY "modification impossible"
         END-IF 
-       END-IF.
+       CLOSE fscenes.
 
 
        AFFICHER_SCENES.
@@ -1464,18 +1500,110 @@ PROCEDURE DIVISION.
        DISPLAY 'Cout      : ' ,fs_cout
        DISPLAY '_________________________________________'.
 
+
+       *> Modification sur l'édition
+       *> Sur le cout moyen d'une scene 
+       *> Sur le resultat du festival 
+       MODIFIER_SCENE_COUT.
+        READ fscenes
+        END-READ
+        OPEN I-O feditions
+             MOVE fs_dateA TO fe_dateA
+             READ feditions
+             *> On enlève la scene dans les statistiques 
+             
+             *> Si la scene existe et n'a pas de représentation programmé 
+              *> On initialise les variables temporaires
+              MOVE 0 TO WnbScene
+              MOVE 0 TO WResTemp
+              MOVE 0 TO WCouTemp
+
+              *> On met a jour le nombre de  scene + le res de l'edition
+              *> Et le cout moyen 
+              MOVE fe_nbScene TO WnbScene
+              MOVE fe_resultat TO WResTemp
+              *> On calcul le cout total avant ajout 
+              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
+              *> On enlève le cout de la nouvelle scene  
+              COMPUTE WCouTemp = WCouTemp - fs_cout END-COMPUTE
+              *> On décrémente le nombre de scene 
+              COMPUTE WnbScene = WnbScene - 1 END-COMPUTE 
+              *> On recalcul la moyenne 
+              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
+              *> On met à jour le resultat du festival
+              COMPUTE WResTemp = WResTemp + fs_cout END-COMPUTE 
+
+              MOVE WResTemp TO fe_resultat
+              MOVE WnbScene TO fe_nbScene
+              MOVE WCouTemp TO fe_coutMoyenScene
+              
+              REWRITE fedTampon
+              INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
+              NOT INVALID KEY DISPLAY 'Edition mise à jour'
+              END-REWRITE
+
+              MOVE 0 TO fs_cout
+              PERFORM WITH TEST AFTER UNTIL fs_cout > 0
+              DISPLAY 'Saisir un cout supérieure à 0'
+             ACCEPT fs_cout
+               END-PERFORM
+
+              MOVE fs_dateA TO fs_dateA
+              READ feditions
+
+                 *> On initialise les variables temporaires
+              MOVE 0 TO WnbScene
+              MOVE 0 TO WResTemp
+              MOVE 0 TO WCouTemp
+
+              *> On met a jour le nombre de  scene + le res de l'edition
+              *> Et le cout moyen 
+              MOVE fe_nbScene TO WnbScene
+              MOVE fe_resultat TO WResTemp
+              *> On calcul le cout total avant ajout 
+              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
+              *> On ajoute le cout de la nouvelle scene  
+              COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE
+              *> On augmente le nombre de scene 
+              COMPUTE WnbScene = WnbScene + 1 END-COMPUTE 
+              *> On recalcul la moyenne 
+              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
+              *> On met à jour le resultat du festival
+              COMPUTE WResTemp = WResTemp - fs_cout END-COMPUTE 
+
+              MOVE WResTemp TO fe_resultat
+              MOVE WnbScene TO fe_nbScene
+              MOVE WCouTemp TO fe_coutMoyenScene
+
+              REWRITE fedTampon
+              INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
+              NOT INVALID KEY DISPLAY 'Edition mise à jour'
+              END-REWRITE
+
+       CLOSE feditions.
+       
+
        MODIFIER_SCENE_CAPACITE.
+
+
+
+       DISPLAY "FIN".
+
+
+
+
+
+       INIT_SCENE_CAPACITE.
        MOVE 0 TO fs_capacite
        PERFORM WITH TEST AFTER UNTIL fs_capacite > 0 AND fs_capacite<99
             DISPLAY 'Saisir une capacite supérieure à 0 et inférieure à 99'
             ACCEPT fs_capacite
        END-PERFORM.  
 
-
        *> Modification sur l'édition
        *> Sur le cout moyen d'une scene 
        *> Sur le resultat du festival 
-       MODIFIER_SCENE_COUT.
+       INIT_SCENE_COUT.
        MOVE 0 TO fs_cout
        PERFORM WITH TEST AFTER UNTIL fs_cout > 0
          DISPLAY 'Saisir un cout supérieure à 0'
@@ -1504,8 +1632,8 @@ PROCEDURE DIVISION.
         *> Si la scene est inexistante  
         IF Wtrouve = 0 
 
-         PERFORM MODIFIER_SCENE_COUT
-         PERFORM MODIFIER_SCENE_CAPACITE
+         PERFORM INIT_SCENE_CAPACITE
+         PERFORM INIT_SCENE_COUT
          *> Apres modification on ajoute la scene 
 
           WRITE fscTampon  
@@ -1578,12 +1706,9 @@ PROCEDURE DIVISION.
             READ fscenes NEXT 
             AT END 
               MOVE 1 TO WFin
-              DISPLAY "Fin "
            NOT AT END   
               PERFORM AFFICHER_SCENES
-          END-PERFORM  
-       CLOSE fscenes
-       DISPLAY 'over'.
+          END-PERFORM.
 
       *> Gestion editions
 
