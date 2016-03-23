@@ -47,6 +47,15 @@ FILE-CONTROL.
        ALTERNATE RECORD KEY IS frep_nomGr WITH DUPLICATES
        ALTERNATE RECORD KEY IS frep_nomSce WITH DUPLICATES.
 
+       SELECT frepresentationsTemp ASSIGN TO "representations.dat"
+       ORGANIZATION IS INDEXED
+       ACCESS IS dynamic
+       FILE STATUS IS frepTemp_stat
+       RECORD KEY IS frep_cleRepT
+       ALTERNATE RECORD KEY IS frep_dateAT WITH DUPLICATES
+       ALTERNATE RECORD KEY IS frep_nomGrT WITH DUPLICATES
+       ALTERNATE RECORD KEY IS frep_nomSceT WITH DUPLICATES.
+
 
        SELECT feditions ASSIGN TO "editions.dat"
        ORGANIZATION INDEXED
@@ -108,13 +117,24 @@ FILE SECTION.
         FD frepresentations.
         01 frepTampon.
           02 frep_cleRep. 
-            03 frep_jour  PIC 9(2).
-            03 frep_heureDebut PIC 9(4).
-            03 frep_dateA PIC 9(4).
+            03 frep_jour  PIC S9(2).
+            03 frep_heureDebut PIC S9(4).
+            03 frep_dateA PIC S9(4).
             03 frep_nomSce PIC A(30).
           02 frep_nomGr PIC A(30).
-          02 frep_cachet PIC 9(6).
-          02 frep_nbPersonneMax PIC 9(30).
+          02 frep_cachet PIC S9(6).
+          02 frep_nbPersonneMax PIC S9(30).
+
+        FD frepresentationsTemp.
+        01 frepTamponTemp.
+          02 frep_cleRepT. 
+            03 frep_jourT  PIC S9(2).
+            03 frep_heureDebutT PIC S9(4).
+            03 frep_dateAT PIC S9(4).
+            03 frep_nomSceT PIC A(30).
+          02 frep_nomGrT PIC A(30).
+          02 frep_cachetT PIC S9(6).
+          02 frep_nbPersonneMaxT PIC S9(30).
 
 
          FD feditions. 
@@ -139,6 +159,7 @@ WORKING-STORAGE SECTION.
         77 fg_stat PIC 9(2).
         77 fgTemp_stat PIC 9(2).
         77 frep_stat PIC 9(2).
+        77 frepTemp_stat PIC 9(2).
         77 fe_stat PIC 9(2).
         77 fi_stat PIC 9(2). 
         77 Wcount PIC 9(3).
@@ -167,6 +188,10 @@ WORKING-STORAGE SECTION.
         77 styleDernier PIC A(30).
         77 WchoixModifReserv PIC 9(2).
         77 Wjour      PIC 9.
+        77 minutes PIC S9(2).
+        77 jourRep PIC S9(2).
+        77 heureRep PIC S9(4).
+        77 dispoGr PIC 9.
     	*>VARIABLES SCENE 
         77 WnbScene PIC 9(2).
         77 WResTemp PIC S9(30).
@@ -185,7 +210,7 @@ WORKING-STORAGE SECTION.
         77 Wrep PIC 9(1).
      *>  Statistiques
         77 nbArtisteN PIC 9(3).
-        77 nbMoyArtiste PIC 9(3).
+        77 nbMoyArtiste PIC 999v99.
         77 nbEdition PIC 9(3).
 
 PROCEDURE DIVISION.
@@ -1211,25 +1236,39 @@ PROCEDURE DIVISION.
                 PERFORM VERIF_EDITION
               CLOSE feditions
             END-PERFORM
-            MOVE fe_dateA to frep_dateA
-              PERFORM WITH TEST AFTER UNTIL frep_jour <= 3
-                DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
-                WITH NO ADVANCING
-                ACCEPT frep_jour
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 AND frep_heureDebut < 2400
-                DISPLAY 'Indiquer l''heure de début : '
-                WITH NO ADVANCING
-                ACCEPT frep_heureDebut
-              END-PERFORM
-              MOVE 0 TO Wtrouve
+            MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+              PERFORM AFFICHER_GROUPES
                 DISPLAY 'Indiquer le nom du groupe : '
                 WITH NO ADVANCING
                 ACCEPT nomGr
               PERFORM VERIF_NOM_GROUPE
               END-PERFORM
               MOVE nomGr TO frep_nomGr
+            MOVE fe_dateA to frep_dateA
+              PERFORM WITH TEST AFTER UNTIL frep_jour <= 3 AND frep_jour > 0
+                DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
+                WITH NO ADVANCING
+                ACCEPT frep_jour
+              END-PERFORM
+              PERFORM WITH TEST AFTER UNTIL dispoGr = 0
+              PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
+                DISPLAY 'Indiquer l''heure de début (HH) : '
+                WITH NO ADVANCING
+                ACCEPT frep_heureDebut
+              END-PERFORM
+              PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
+                DISPLAY 'et les minutes (MM) : '
+                WITH NO ADVANCING
+                ACCEPT minutes
+              END-PERFORM
+              COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+              MOVE frep_heureDebut TO heureRep
+              MOVE frep_jour TO jourRep
+              MOVE frepTampon TO frepTamponTemp
+              PERFORM VERIF_DISPO_GROUPE
+              MOVE frepTamponTemp TO frepTampon
+              END-PERFORM
               *> Incrémentation du nombre d'artiste
               OPEN I-O feditions
                  READ feditions
@@ -1244,6 +1283,8 @@ PROCEDURE DIVISION.
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+              MOVE frep_dateA to fs_dateA
+              PERFORM AFFICHER_SCENES_ANNEE_SP
               DISPLAY 'Indiquer le nom de la scènes : '
               WITH NO ADVANCING
               ACCEPT frep_nomSce
@@ -1271,11 +1312,16 @@ PROCEDURE DIVISION.
                 WITH NO ADVANCING
                 ACCEPT frep_nbPersonneMax
               END-PERFORM
-              WRITE frepTampon END-WRITE
-          
+              WRITE frepTampon 
+                INVALID KEY
+                DISPLAY 'erreur interne  ******'
+                NOT INVALID KEY
+                DISPLAY 'représentation ajoutée'
+              END-WRITE
               CLOSE frepresentations.
 
         AFFICHER_REPRESENTATION.
+        MOVE 0 to Wfin
               OPEN INPUT frepresentations                        
                 DISPLAY 'Indiquer l''année de représentation : '
                 WITH NO ADVANCING
@@ -1296,6 +1342,30 @@ PROCEDURE DIVISION.
                 END-PERFORM
                  END-START
                 CLOSE frepresentations.
+
+        VERIF_DISPO_GROUPE.
+        MOVE 0 TO dispoGr                       
+                START frepresentations,
+                KEY = frep_nomGr
+                  INVALID KEY
+                    DISPLAY 'Pas de représentation pour ce groupe'
+                    MOVE 1 TO Wfin
+                  NOT INVALID KEY
+                PERFORM WITH TEST AFTER UNTIL Wfin = 1
+                  READ frepresentations NEXT RECORD
+                  AT END
+                    MOVE 1 TO Wfin
+                  NOT AT END
+                    IF frep_jour = jourRep THEN
+                      IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
+                      DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
+                      MOVE 1 TO dispoGr
+                      END-IF
+                    END-IF
+                  END-READ
+                END-PERFORM
+                 END-START.
+
         AFFICHER_PROGRAMMATION.
               OPEN INPUT frepresentations                     
               MOVE 1 TO Wcount   
@@ -1355,15 +1425,20 @@ PROCEDURE DIVISION.
                      DISPLAY 'Indiquer le jour de représentation : '
                      WITH NO ADVANCING
                      ACCEPT frep_jour
-                     DISPLAY 'Indiquer l''heure de représentation : '
+                     DISPLAY 'Indiquer l''heure de représentation (HH): '
                      WITH NO ADVANCING
                      ACCEPT frep_heureDebut
+                     DISPLAY 'et les minutes (MM) : '
+                     WITH NO ADVANCING
+                     ACCEPT minutes
+                     COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
                      DELETE frepresentations RECORD
                             INVALID KEY
                                    DISPLAY 'La représentation n''existe pas'
                             NOT INVALID KEY
                                    DISPLAY 'Représentation supprimée'
               CLOSE frepresentations.
+
        
        MODIFIER_REPRESENTATION.
           OPEN I-O frepresentations
@@ -1708,6 +1783,23 @@ PROCEDURE DIVISION.
               MOVE 1 TO WFin
            NOT AT END   
               PERFORM AFFICHER_SCENES
+          END-PERFORM  
+       CLOSE fscenes.
+
+       AFFICHER_SCENES_ANNEE_SP.
+       MOVE 0 TO WFin
+       OPEN INPUT fscenes
+       START fscenes, KEY = fs_dateA
+        INVALID KEY 
+           DISPLAY 'Pas de scène pour l''année saisie' 
+        NOT INVALID KEY
+        DISPLAY 'Scènes de ',fs_dateA,' :'
+          PERFORM WITH TEST AFTER UNTIL WFin = 1
+            READ fscenes NEXT 
+            AT END 
+              MOVE 1 TO WFin
+           NOT AT END   
+              DISPLAY 'Nom : ', fs_nomSce
           END-PERFORM  
        CLOSE fscenes.
 
