@@ -1580,12 +1580,13 @@ PROCEDURE DIVISION.
            PERFORM WITH TEST AFTER UNTIL choix = 0
              PERFORM WITH TEST AFTER UNTIL choix < 9
               DISPLAY " _______* Menu gestion des scènes *_______ "
+              DISPLAY '|Quitter                  :              0|'
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
               DISPLAY "|_________________________________________|"
-
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
        
               EVALUATE choix
@@ -1704,7 +1705,7 @@ PROCEDURE DIVISION.
               DISPLAY "|Modifier capicité    :                  1|"
               DISPLAY "|Modifier cout        :                  2|"
               DISPLAY "|_________________________________________|"
-
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
        
               EVALUATE choix
@@ -1958,6 +1959,7 @@ PROCEDURE DIVISION.
            DISPLAY " |Afficher cout moyen des artistes       7|"
            DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
+           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
            ACCEPT choix
            EVALUATE choix
              WHEN 1 PERFORM AFFICHER_EDITIONS
