@@ -147,6 +147,7 @@ WORKING-STORAGE SECTION.
         77 WchoixMenu PIC 9(2).
         77 Wchoix     PIC 9(2).
         77 Wfin      PIC 9.
+        77 Wcpt       PIC 9(6).
 
     	*>Variables pass réservation
         77 nomPa     PIC 9(3).
@@ -165,6 +166,7 @@ WORKING-STORAGE SECTION.
         77 nomDernier PIC A(30).
         77 styleDernier PIC A(30).
         77 WchoixModifReserv PIC 9(2).
+        77 Wjour      PIC 9.
     	*>VARIABLES SCENE 
         77 WnbScene PIC 9(2).
         77 WResTemp PIC S9(30).
@@ -310,6 +312,18 @@ PROCEDURE DIVISION.
               MOVE 01 TO j
               MOVE 01 TO m
               MOVE 1801 TO j
+              DISPLAY 'Désirez-vous afficher une programmation avant d''effectuer une réservation?'
+              DISPLAY '1 pour oui, 0 pour non : 'WITH NO ADVANCING
+              ACCEPT Wchoix
+              IF Wchoix = 1 THEN 
+                PERFORM WITH TEST AFTER UNTIL Wchoix = 0
+                  PERFORM AFFICHER_PROGRAMMATION
+                  DISPLAY 'Désirez-vous afficher la programmation d''une autre édition?'
+                  DISPLAY '1 pour oui, 0 pour non : '
+                  WITH NO ADVANCING
+                  ACCEPT Wchoix
+                END-PERFORM
+              END-IF
               DISPLAY "____________* Nouvelle réservation *__________"
               DISPLAY 'Indiquer l''édition désirée : '
               WITH NO ADVANCING
@@ -1199,7 +1213,6 @@ PROCEDURE DIVISION.
             END-PERFORM
             MOVE fe_dateA to frep_dateA
               PERFORM WITH TEST AFTER UNTIL frep_jour <= 3
-<<<<<<< HEAD
                 DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
                 WITH NO ADVANCING
                 ACCEPT frep_jour
@@ -1207,13 +1220,6 @@ PROCEDURE DIVISION.
               PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 AND frep_heureDebut < 2400
                 DISPLAY 'Indiquer l''heure de début : '
                 WITH NO ADVANCING
-=======
-                DISPLAY 'Jour de la représentation ? (01,02,03)'
-                ACCEPT frep_jour
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 AND frep_heureDebut < 2400
-                DISPLAY 'Heure de début ? au format (HHMM) '
->>>>>>> 7d817049ecaa08d78028d6f05d8122a1185e3aeb
                 ACCEPT frep_heureDebut
               END-PERFORM
               MOVE 0 TO Wtrouve
@@ -1223,6 +1229,7 @@ PROCEDURE DIVISION.
                 ACCEPT nomGr
               PERFORM VERIF_NOM_GROUPE
               END-PERFORM
+              MOVE nomGr TO frep_nomGr
               *> Incrémentation du nombre d'artiste
               OPEN I-O feditions
                  READ feditions
@@ -1284,11 +1291,58 @@ PROCEDURE DIVISION.
                   AT END
                     MOVE 1 TO Wfin
                   NOT AT END
-                    DISPLAY 'Le groupe ',frep_nomGr,'joue sur ', frep_nomSce,'le ',frep_jour,' à ',frep_heureDebut
+                    DISPLAY 'Le groupe ',frep_nomGr,' joue sur ', frep_nomSce,'le ',frep_jour,' à ',frep_heureDebut
                   END-READ
                 END-PERFORM
                  END-START
                 CLOSE frepresentations.
+        AFFICHER_PROGRAMMATION.
+              OPEN INPUT frepresentations                     
+              MOVE 1 TO Wcount   
+              DISPLAY 'Indiquer l''édition : '
+              WITH NO ADVANCING
+              ACCEPT frep_dateA 
+              MOVE frep_dateA TO dateA
+              PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
+                MOVE 0 TO Wcpt
+                MOVE 0 TO Wfin
+                MOVE dateA TO frep_dateA
+                MOVE Wcount TO Wjour
+                START frepresentations,
+                KEY = frep_dateA
+                  INVALID KEY
+                    DISPLAY 'Pas d''édition cette année'
+                    MOVE 1 TO Wfin
+                    MOVE 0 TO Wtrouve
+                  NOT INVALID KEY
+                  MOVE 1 TO Wtrouve
+                  PERFORM WITH TEST AFTER UNTIL Wfin = 1
+                    READ frepresentations NEXT RECORD
+                    AT END
+                      MOVE 1 TO Wfin
+                    NOT AT END
+                      IF dateA = frep_dateA THEN
+                        IF frep_jour = Wjour THEN
+                        IF Wcpt = 0 THEN
+                          DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
+                          DISPLAY '|Groupe                        |Scène                         |Heure|'
+                        END-IF
+                          DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
+                          COMPUTE Wcpt = Wcpt + 1
+                        END-IF
+                        
+                      ELSE
+                        MOVE 1 TO Wfin
+                      END-IF
+                    END-READ
+                  END-PERFORM
+                 END-START 
+                 COMPUTE Wcount = Wcount + 1
+                 IF Wtrouve = 1 THEN
+                 DISPLAY '|______________________________|______________________________|_____|'
+                 END-IF
+              END-PERFORM
+              CLOSE frepresentations.
 
        SUPPRIMER_REPRESENTATION.
               OPEN I-O frepresentations
