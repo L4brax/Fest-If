@@ -168,6 +168,7 @@ WORKING-STORAGE SECTION.
         77 choixMenu PIC 9(2).
         77 choix     PIC 9(2).
         77 Wfin      PIC 9.
+        77 quitter PIC A.
 
     	*>Variables pass réservation
         77 nomPa     PIC 9(3).
@@ -1026,17 +1027,34 @@ PROCEDURE DIVISION.
        END-PERFORM.
               
        AJOUTER_GROUPE.
-              PERFORM WITH TEST AFTER UNTIL Wtrouve = 0
+              MOVE 'n' to quitter
+              PERFORM WITH TEST AFTER UNTIL Wtrouve = 0 AND nomGr IS NOT = ' '
                     DISPLAY 'Nom du groupe ?'
                         ACCEPT nomGr
+                         IF nomGr = ' ' THEN
+                      DISPLAY 'Le nom ne peut être vide !!'
+                        ELSE
                         PERFORM VERIF_NOM_GROUPE
+                        END-IF
+                        IF Wtrouve = 1 THEN
+                         DISPLAY 'le groupe existe dèjà !!'
+                         DISPLAY 'voulez-vous quitter ? (n/o)'
+                          ACCEPT quitter
+                          IF quitter = 'o' THEN 
+                            MOVE 0 TO Wtrouve
+                          END-IF
+                        END-IF
               END-PERFORM
+              IF quitter = 'n' THEN
               MOVE nomGr TO fg_nom
+              PERFORM WITH TEST AFTER UNTIL fg_style IS NOT = ' '
               DISPLAY 'Style du groupe ?'
               ACCEPT fg_style
+              END-PERFORM
               OPEN EXTEND fgroupes
               WRITE fgTampon END-WRITE
-              CLOSE fgroupes.
+              CLOSE fgroupes
+              END-IF.
        
        VERIF_NOM_GROUPE.
               OPEN INPUT fgroupes
@@ -1222,15 +1240,18 @@ PROCEDURE DIVISION.
               MOVE frepTamponTemp TO frepTampon
               END-PERFORM
               *> Incrémentation du nombre d'artiste
-              OPEN I-O feditions
-                 READ feditions
-                 INVALID KEY
-                   DISPLAY "Aucune édition à cette date."
-                 NOT INVALID KEY
-                  COMPUTE fe_nbArtiste = fe_nbArtiste + 1
-                   REWRITE fedTampon
-                 END-READ
-               CLOSE feditions
+
+              START frepresentations,
+                KEY = frep_nomGr
+                  INVALID KEY
+                    OPEN I-O feditions
+                      READ feditions
+                        NOT INVALID KEY
+                          COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                          REWRITE fedTampon 
+                      END-READ
+                    CLOSE feditions
+                 END-START
 
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
@@ -1253,14 +1274,16 @@ PROCEDURE DIVISION.
               CLOSE fscenes
               END-PERFORM
               PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
-                DISPLAY 'Cachet ?'
+                DISPLAY 'Cachet artiste : '
+                WITH NO ADVANCING
                 ACCEPT frep_cachet
               END-PERFORM
               OPEN INPUT fscenes
 
               Close fscenes
-              PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax GREATER 0
-                DISPLAY 'Nombre de personne max ?'
+              PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax <= fs_capacite
+                DISPLAY 'Nombre de personne max : '
+                WITH NO ADVANCING
                 ACCEPT frep_nbPersonneMax
               END-PERFORM
               WRITE frepTampon 
@@ -1368,26 +1391,40 @@ PROCEDURE DIVISION.
 
        SUPPRIMER_REPRESENTATION.
               OPEN I-O frepresentations
-                     DISPLAY 'Nom de la scène :'
-                     ACCEPT frep_nomSce
-                     DISPLAY 'Année édition :'
-                     ACCEPT frep_dateA
-                     DISPLAY 'Jour :'
-                     ACCEPT frep_jour
-                     DISPLAY 'Indiquer l''heure de représentation (HH): '
-                     WITH NO ADVANCING
-                     ACCEPT frep_heureDebut
-                     DISPLAY 'et les minutes (MM) : '
-                     WITH NO ADVANCING
-                     ACCEPT minutes
-                     COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-                     DELETE frepresentations RECORD
-                            INVALID KEY
-                                   DISPLAY 'La représentation n existe pas'
-                            NOT INVALID KEY
-                                   DISPLAY 'Représentation supprimée'
+                 DISPLAY 'Nom de la scène :'
+                 ACCEPT frep_nomSce
+                 DISPLAY 'Année édition :'
+                 ACCEPT frep_dateA
+                 DISPLAY 'Jour :'
+                 ACCEPT frep_jour
+                 DISPLAY 'Indiquer l''heure de représentation (HH): '
+                 WITH NO ADVANCING
+                 ACCEPT frep_heureDebut
+                 DISPLAY 'et les minutes (MM) : '
+                 WITH NO ADVANCING
+                 ACCEPT minutes
+                 COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+                 READ frepresentations
+                  MOVE frep_nomGr TO nomGr
+                 DELETE frepresentations RECORD
+                  INVALID KEY
+                    DISPLAY 'La représentation n existe pas'
+                  NOT INVALID KEY
+                    MOVE nomGr TO frep_nomGr
+                   DISPLAY 'Représentation supprimée'
+                   DISPLAY frep_nomGr
+                    START frepresentations,
+                    KEY = frep_nomGr
+                      INVALID KEY
+                        OPEN I-O feditions
+                        READ feditions
+                        NOT INVALID KEY
+                          COMPUTE fe_nbArtiste = fe_nbArtiste - 1
+                          REWRITE fedTampon 
+                      END-READ
+                    CLOSE feditions
+                     END-START
               CLOSE frepresentations.
-
        
        MODIFIER_REPRESENTATION.
           OPEN I-O frepresentations
