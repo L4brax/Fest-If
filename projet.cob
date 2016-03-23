@@ -147,8 +147,8 @@ FILE SECTION.
           02 fe_nbResaJourUn PIC 9(4).
           02 fe_nbResaJourDeux PIC 9(4). 
           02 fe_nbResaJourTrois PIC 9(4). 
-          02 fe_resultat PIC S9(30). 
-          02 fe_coutMoyenScene PIC 9(30). 
+          02 fe_Ca PIC S9(30). 
+          02 fe_coutScenes PIC 9(30). 
           02 fe_coutArtistes PIC 9(30). 
                   
 WORKING-STORAGE SECTION.
@@ -195,7 +195,6 @@ WORKING-STORAGE SECTION.
 
     	*>VARIABLES SCENE 
         77 WnbScene PIC 9(2).
-        77 WResTemp PIC S9(30).
         77 WCouTemp PIC 9(30).
 
 
@@ -214,6 +213,8 @@ WORKING-STORAGE SECTION.
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
      *>  Statistiques
+        77 WcoutMoyenA PIC 9(30).
+        77 WcoutMoyenS PIC 9(30).
         77 nbArtisteN PIC 9(3).
         77 nbMoyArtiste PIC 999v99.
         77 nbEdition PIC 9(3).
@@ -515,7 +516,7 @@ PROCEDURE DIVISION.
                     COMPUTE fe_nbResaJourDeux = fe_nbResaJourDeux + 1
                     COMPUTE fe_nbResaJourTrois = fe_nbResaJourTrois + 1
                 END-EVALUATE
-                COMPUTE fe_resultat = fe_resultat + fp_prix
+                COMPUTE fe_Ca = fe_Ca + fp_prix
                 REWRITE fedTampon
                  INVALID KEY
                    DISPLAY "impossible d''ajouter une réservation"
@@ -959,7 +960,7 @@ PROCEDURE DIVISION.
                 AT END MOVE 1 TO Wfin
                 NOT AT END
                  IF fp_dateA = dateA THEN
-                   COMPUTE fe_resultat = fe_resultat - fp_prix + Wprix
+                   COMPUTE fe_Ca = fe_Ca - fp_prix + Wprix
                  ELSE                      
                    MOVE 1 TO Wfin
                  END-IF
@@ -1527,27 +1528,19 @@ PROCEDURE DIVISION.
               *> On initialise les variables temporaires
               MOVE fs_dateA TO fe_dateA
               MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
               MOVE 0 TO WCouTemp
 
               *> On met a jour le nombre de  scene + le res de l'edition
               *> Et le cout moyen 
               MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
-              *> On enlève le cout de la nouvelle scene  
+              MOVE fe_coutScenes TO WCouTemp
+              *> On enlève le cout de la scene  
               COMPUTE WCouTemp = WCouTemp - fs_cout END-COMPUTE
               *> On décrémente le nombre de scene 
               COMPUTE WnbScene = WnbScene - 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp + fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
+     
               MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
+              MOVE WCouTemp TO fe_coutScenes
 
               REWRITE fedTampon
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
@@ -1649,69 +1642,27 @@ PROCEDURE DIVISION.
              READ feditions
              *> On enlève la scene dans les statistiques 
              
-             *> Si la scene existe et n'a pas de représentation programmé 
               *> On initialise les variables temporaires
-              MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
               MOVE 0 TO WCouTemp
 
-              *> On met a jour le nombre de  scene + le res de l'edition
-              *> Et le cout moyen 
-              MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
-              *> On enlève le cout de la nouvelle scene  
+              *> On met a jour le cout total scene 
+              MOVE fe_coutScenes TO WCouTemp
+              *> On enlève l'ancien cout de la  scene  
               COMPUTE WCouTemp = WCouTemp - fs_cout END-COMPUTE
-              *> On décrémente le nombre de scene 
-              COMPUTE WnbScene = WnbScene - 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp + fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
-              MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
-              
-              REWRITE fedTampon
-              INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
-              NOT INVALID KEY DISPLAY 'Edition mise à jour'
-              END-REWRITE
-
+        
               MOVE 0 TO fs_cout
               PERFORM WITH TEST AFTER UNTIL fs_cout > 0
               DISPLAY 'Saisir un cout supérieure à 0'
              ACCEPT fs_cout
-               END-PERFORM
+              END-PERFORM
 
               MOVE fs_dateA TO fs_dateA
               READ feditions
 
-                 *> On initialise les variables temporaires
-              MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
-              MOVE 0 TO WCouTemp
+              COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE 
 
-              *> On met a jour le nombre de  scene + le res de l'edition
-              *> Et le cout moyen 
-              MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
-              *> On ajoute le cout de la nouvelle scene  
-              COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE
-              *> On augmente le nombre de scene 
-              COMPUTE WnbScene = WnbScene + 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp - fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
-              MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
-
+              MOVE WCouTemp TO fe_coutScenes
+     
               REWRITE fedTampon
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
               NOT INVALID KEY DISPLAY 'Edition mise à jour'
@@ -1752,7 +1703,7 @@ PROCEDURE DIVISION.
             ACCEPT fs_capacite
            END-PERFORM.    
 
-          .
+          
 
 
 
@@ -1805,27 +1756,21 @@ PROCEDURE DIVISION.
             NOT INVALID KEY DISPLAY 'Scene enregistré'
               *> On initialise les variables temporaires
               MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
               MOVE 0 TO WCouTemp
+          
 
               *> On met a jour le nombre de  scene + le res de l'edition
               *> Et le cout moyen 
               MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
+              MOVE fe_coutScenes TO WCouTemp
+  
               *> On ajoute le cout de la nouvelle scene  
               COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE
               *> On augmente le nombre de scene 
               COMPUTE WnbScene = WnbScene + 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp - fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
+     
+              MOVE WCouTemp TO fe_coutScenes
               MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
 
               REWRITE fedTampon
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
@@ -1942,9 +1887,9 @@ PROCEDURE DIVISION.
              DISPLAY "Nombre de réservation jour 1 : ",fe_nbResaJourUn
              DISPLAY "Nombre de réservation jour 2 : ",fe_nbResaJourDeux
              DISPLAY "Nombre de réservation jour 2 : ",fe_nbResaJourTrois
-             DISPLAY "Résultat final : ",fe_resultat," euros"
-             DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
-             DISPLAY "Cachet moyen : ",fe_coutArtistes.
+             DISPLAY "Benefice final : ",fe_Ca," euros"
+             DISPLAY "Coût total des scènes  : ",fe_coutScenes
+             DISPLAY "Coût total des artistes : ",fe_coutArtistes.
 
 
 
@@ -1971,8 +1916,8 @@ PROCEDURE DIVISION.
            MOVE 0 TO fe_nbResaJourUn
            MOVE 0 TO fe_nbResaJourDeux
            MOVE 0 TO fe_nbResaJourTrois
-           MOVE 0 TO fe_resultat
-           MOVE 0 TO fe_coutMoyenScene
+           MOVE 0 TO fe_Ca
+           MOVE 0 TO fe_coutScenes
            MOVE 0 TO fe_coutArtistes
            MOVE fe_dateA TO fp_dateA
            PERFORM GENERER_PASS
@@ -2058,7 +2003,7 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'éditions à cette date."
          NOT INVALID KEY
-           DISPLAY "Reslutat : ",fe_resultat
+           DISPLAY "Chiffre d''affaires : ",fe_Ca
        END-READ
        CLOSE feditions.
 
@@ -2072,7 +2017,8 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'éditions à cette date."
          NOT INVALID KEY
-           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+           DISPLAY "Coût moyen d'une scène : ", 
+           DIVIDE fe_coutScenes BY fe_nbScene GIVING WcoutMoyenA END-DIVIDE
        END-READ
        CLOSE feditions.
        *>Statistiques
@@ -2140,7 +2086,7 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'éditions à cette date."
          NOT INVALID KEY
-           DISPLAY "Coût moyen des artistes : ",fe_coutArtistes
+           DISPLAY "Coût total des artistes : ",fe_coutArtistes
        END-READ
        CLOSE feditions.
 
