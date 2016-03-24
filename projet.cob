@@ -2401,7 +2401,10 @@ PROCEDURE DIVISION.
              DISPLAY "Benefice final : ",fe_Ca," euros"
              DISPLAY "Coût total des scènes  : ",fe_coutScenes
              DISPLAY "Coût total des artistes : ",fe_coutArtistes.
-
+             DIVIDE fe_coutScenes BY fe_nbScene GIVING WcoutMoyenA END-DIVIDE
+             DISPLAY "Coût moyen d'une scène : ",WcoutMoyenA
+             DIVIDE fe_coutArtistes BY fe_nbArtiste GIVING WcoutMoyenA END-DIVIDE
+             DISPLAY "Coût moyen d'un artiste : ",WcoutMoyenA.
 
 
 
