@@ -162,7 +162,9 @@ FILE SECTION.
           02 fe_coutScenes PIC 9(30). 
           02 fe_coutArtistes PIC 9(30).
           02 fe_nbRepresentations PIC 9(2).       
-          02 fe_Ca PIC S9(30).                  
+          02 fe_Ca PIC S9(30).          
+
+
 
 
 WORKING-STORAGE SECTION.
@@ -249,6 +251,13 @@ WORKING-STORAGE SECTION.
         77 nbMoyArtiste PIC 999v99.
         77 nbEdition PIC 9(3).
 
+        *> Format date  
+        01 DateActuelle.
+         02  AnActu     PIC 9(4).
+         02  MoisActu   PIC 99.
+         02  JourActu   PIC 99.     
+
+
 PROCEDURE DIVISION.
 
       *> Vérifiaction présence des fichiers 
@@ -322,14 +331,18 @@ PROCEDURE DIVISION.
        END-IF
 
       *> Mise à jour des variables de connection en cas d'arrêt brutal 
-       MOVE 0 TO WchoixCo 
-       MOVE 0 TO Wconnect 
+       MOVE 0 TO WchoixCo
+       MOVE 0 TO Wconnect
+      *> On met à jour la date 
+       MOVE FUNCTION CURRENT-DATE TO DateActuelle  
 
-
+       DISPLAY AnActu
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
         PERFORM WITH TEST AFTER UNTIL choixMenu<9  
-        *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
+      *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
        
+        MOVE AnActu TO fe_dateA 
+        MOVE AnActu TO fp_dateA    
 
       *> Menu festivallier 
           DISPLAY "  ______________* Bienvenue *_____________" 
@@ -340,6 +353,7 @@ PROCEDURE DIVISION.
           DISPLAY ' |Gestionnaire, se connecter  :          4|'
           DISPLAY ' |________________________________________|'
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+          DISPLAY fe_dateA
           ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1   PERFORM AFFICHER_PROGRAMMATION 
