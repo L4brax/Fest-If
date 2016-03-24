@@ -219,7 +219,7 @@ WORKING-STORAGE SECTION.
         77 Wresultat PIC 9(9).
         77 WchoixModifReserv PIC 9(2).
         77 Wjour      PIC 9.
-        77 minutes PIC S9(2).
+        77 minutes PIC 9(2).
         77 jourRep PIC S9(2).
         77 heureRep PIC S9(4).
         77 dispoGr PIC 9.
@@ -1560,6 +1560,9 @@ PROCEDURE DIVISION.
                 DISPLAY 'Nombre de personne max : '
                 WITH NO ADVANCING
                 ACCEPT frep_nbPersonneMax
+                IF frep_nbPersonneMax <= fs_capacite THEN
+                  DISPLAY 'La capacité max de la scène est de : ',fs_capacite
+                END-IF
               END-PERFORM
               WRITE frepTampon 
                 INVALID KEY
@@ -1605,7 +1608,7 @@ PROCEDURE DIVISION.
           START frepresentations,
           KEY = frep_dateA
             INVALID KEY
-              DISPLAY 'Pas d''édition cette année'
+              DISPLAY 'Pas de représentation'
               MOVE 1 TO Wfin
             NOT INVALID KEY
           PERFORM WITH TEST AFTER UNTIL Wfin = 1
@@ -1634,6 +1637,10 @@ PROCEDURE DIVISION.
             NOT AT END
               IF frep_jour = jourRep THEN
                 IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
+                DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
+                MOVE 1 TO dispoGr
+                END-IF
+                IF frep_heureDebut >= heureRep AND frep_heureDebut <= heureRep + 200
                 DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
                 MOVE 1 TO dispoGr
                 END-IF
@@ -2179,15 +2186,17 @@ PROCEDURE DIVISION.
            DISPLAY 'Pas de scène pour l''année saisie' 
         NOT INVALID KEY
         DISPLAY 'Scènes de ',fs_dateA,' :'
+              DISPLAY '|*____Affichage des scènes____*|'
+              DISPLAY '|Nom                           |'
           PERFORM WITH TEST AFTER UNTIL WFin = 1
             READ fscenes NEXT 
             AT END 
               MOVE 1 TO WFin
            NOT AT END   
-              DISPLAY 'Nom : ', fs_nomSce
+              DISPLAY '|', fs_nomSce, '|'
           END-PERFORM  
+           DISPLAY '|______________________________|'
        CLOSE fscenes.
-
       *> Gestion editions
 
        GESTION_EDITIONS.
