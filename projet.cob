@@ -2422,7 +2422,7 @@ PROCEDURE DIVISION.
              DIVIDE fe_coutScenes BY fe_nbScene GIVING WcoutMoyenA END-DIVIDE
              DISPLAY "Coût moyen d'une scène : ",WcoutMoyenA
              DIVIDE fe_coutArtistes BY fe_nbArtiste GIVING WcoutMoyenA END-DIVIDE
-             DISPLAY "Coût moyen d'un artiste : ",WcoutMoyenA
+             DISPLAY "Coût moyen d'un artiste : ",WcoutMoyenA.
 
 
 
