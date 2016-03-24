@@ -338,7 +338,6 @@ PROCEDURE DIVISION.
 
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
         PERFORM WITH TEST AFTER UNTIL choixMenu<9  
-      *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
        
         MOVE AnActu TO fe_dateA 
         MOVE AnActu TO fp_dateA    
@@ -731,24 +730,7 @@ PROCEDURE DIVISION.
               END-IF
               CLOSE freservations.
 
-       AJOUTER_RESERVATION_ACTU.
-       OPEN I-O freservations 
-        OPEN INPUT fincrements
-         READ fincrements
-         MOVE fi_idResa TO fres_id
-          *>DISPLAY "Resa Avant  add : ",fi_idResa
-         ADD 1 TO fi_idResa 
-         CLOSE fincrements 
-         OPEN OUTPUT fincrements
-        *>DISPLAY "Resa : ",fi_idResa
-         WRITE finTampon
-         END-WRITE
-         CLOSE fincrements
-
-       READ freservations
-       MOVE 01 TO j
-       MOVE 01 TO m
-       MOVE 1801 TO j.
+     
 
         *> Choix de modification d'une réservation
        MODIFIER_RESERVATION.
@@ -2008,7 +1990,7 @@ PROCEDURE DIVISION.
                WHEN 4 PERFORM MODIFIER_SCENE
               END-EVALUATE
 
-              IF (choix <0) OR (choix) > 9 THEN 
+              IF (choix <0) OR (choix) > 4 THEN 
                 DISPLAY "Attention saisir une valeur correcte"
               END-IF
            END-PERFORM    
@@ -2018,7 +2000,7 @@ PROCEDURE DIVISION.
        MOVE 0 TO Wtrouve
        READ fscenes
         INVALID KEY 
-         DISPLAY 'La scene n''existe pas '
+         DISPLAY "La scene n'existe pas"
         NOT INVALID KEY 
          MOVE 1 TO Wtrouve
          DISPLAY 'La scene est présente' 
@@ -2032,7 +2014,7 @@ PROCEDURE DIVISION.
        ACCEPT fs_nomSce
        PERFORM VERIF_SCENES
        IF Wtrouve = 0 
-        DISPLAY 'La scène spécifié n''existe pas' 
+        DISPLAY "La scène spécifiée n'existe pas"
        ELSE 
          PERFORM VERIF_PROGRAMME_SCENE
          
@@ -2127,7 +2109,7 @@ PROCEDURE DIVISION.
 
               END-EVALUATE
 
-              IF (choix <0) OR (choix) > 2 THEN 
+              IF (choix <0) OR (choix > 2) THEN 
                 DISPLAY "Attention saisir une valeur correcte"
               END-IF
            END-PERFORM   
@@ -2144,7 +2126,7 @@ PROCEDURE DIVISION.
        AFFICHER_SCENES.
        DISPLAY 'Nom:      : ' ,fs_nomSce
        DISPLAY 'Année     : ' ,fs_dateA
-       DISPLAY 'capcicité : ' ,fs_capacite
+       DISPLAY 'capcacité : ' ,fs_capacite
        DISPLAY 'Cout      : ' ,fs_cout
        DISPLAY '_________________________________________'.
 
@@ -2170,7 +2152,7 @@ PROCEDURE DIVISION.
         
               MOVE 0 TO fs_cout
               PERFORM WITH TEST AFTER UNTIL fs_cout > 0
-              DISPLAY 'Saisir un cout supérieure à 0'
+              DISPLAY 'Saisir un cout supérieur à 0'
              ACCEPT fs_cout
               END-PERFORM
 
