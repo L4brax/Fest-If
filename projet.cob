@@ -1996,7 +1996,7 @@ PROCEDURE DIVISION.
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
-              DISPLAY "|Mofifier scene           :              4|"
+              DISPLAY "|Modifier scene           :              4|"
               DISPLAY "|_________________________________________|"
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
@@ -2328,8 +2328,6 @@ PROCEDURE DIVISION.
           MOVE fs_dateA TO fe_dateA
        END-PERFORM  
 
-       OPEN INPUT fscenes
-
        START fscenes, KEY = fs_dateA
 
         INVALID KEY 
@@ -2345,7 +2343,8 @@ PROCEDURE DIVISION.
               ELSE 
                 PERFORM AFFICHER_SCENES
               END-IF
-          END-PERFORM.
+          END-PERFORM
+          MOVE fe_dateA TO fs_dateA.
 
        AFFICHER_SCENES_ANNEE_SP.
        MOVE 0 TO WFin
