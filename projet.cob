@@ -1022,7 +1022,8 @@ PROCEDURE DIVISION.
           DISPLAY 'Il y a un problème avec le pass'
         NOT INVALID KEY
           DISPLAY 'Id de réservation  : ', fres_id 
-          DISPLAY 'Pass               : ', fres_nomPa
+          MOVE fres_nomPa TO nomPa
+          PERFORM AFFICHER_ALIAS_PASS
           DISPLAY 'Prénom             : ', fres_prenom
           DISPLAY 'Département        : ', fres_dep
           DISPLAY 'Edition            : ', fres_dateA 
@@ -1203,6 +1204,24 @@ PROCEDURE DIVISION.
           DISPLAY 'Edition pas trouvée'
         END-IF.
 
+        AFFICHER_ALIAS_PASS.
+          EVALUATE nomPa
+                  WHEN 1 
+                    DISPLAY 'Pass               : premier jour'
+                  WHEN 2
+                    DISPLAY 'Pass               : deuxièmejour'
+                  WHEN 3
+                    DISPLAY 'Pass               : troisième jour'
+                  WHEN 12 
+                    DISPLAY 'Pass               : premier et deuxième jour'
+                  WHEN 13  
+                    DISPLAY 'Pass               : premier et dernier jour' 
+                  WHEN 23  
+                    DISPLAY 'Pass               : deuxième et dernier jour'
+                  WHEN 123  
+                    DISPLAY 'Pass               : trois jours'
+          END-EVALUATE.
+
         *> fichier: fpass en lecture
         *> Vérifie qu'un pass éxiste pour un tampon initialisé
         VERIF_PASS_ID.
@@ -1356,9 +1375,11 @@ PROCEDURE DIVISION.
 
 
        AFFICHER_PASS.
-        DISPLAY 'Nom                : ', fp_nomPa
-        DISPLAY 'Edition            : ', fp_dateA 
-        DISPLAY 'Prix               : ', fp_prix
+        DISPLAY 'Numéro de pass     : ', fp_nomPa
+        MOVE fp_nomPa TO nomPa
+        PERFORM AFFICHER_ALIAS_PASS
+        DISPLAY 'Edition            : ', fp_dateA
+        DISPLAY 'Prix               : ', fp_prix,'€'
         DISPLAY '_________________________________________'.
 
        CHOIX_MODIF_PASS. 
