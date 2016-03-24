@@ -68,11 +68,24 @@ FILE-CONTROL.
        ORGANIZATION SEQUENTIAL 
        ACCESS IS SEQUENTIAL 
        FILE STATUS IS fi_stat.
+
+       SELECT fusers ASSIGN TO "users.dat"
+       ORGANIZATION IS INDEXED
+       ACCESS IS dynamic
+       FILE STATUS IS fu_stat
+       RECORD KEY IS fu_id.
+       
        
 
 DATA DIVISION.
 FILE SECTION.
-       
+
+  
+         FD fusers.
+         01 fiTampon.
+          02 fu_id PIC A(30).
+          02 fu_pass PIC A(30).
+          02 fu_ad PIC 9(1). 
 
         FD fincrements. 
         01 finTampon.
@@ -85,7 +98,6 @@ FILE SECTION.
             03 fs_dateA PIC 9(4).
           02 fs_capacite PIC 9(2).
           02 fs_cout  PIC 9(6).  
-
 
         FD freservations.
         01 fresTampon. 
@@ -166,11 +178,21 @@ WORKING-STORAGE SECTION.
         77 fi_stat PIC 9(2). 
         77 Wcount PIC 9(3).
         77 Wallowed PIC 9(1).
+        77 fu_stat PIC 9(2).
+
+
       *> Variables globales   
         77 choixMenu PIC 9(2).
         77 choix     PIC 9(2).
         77 Wfin      PIC 9.
         77 quitter PIC A.
+
+      *> Variables utilisateur (NE PAS UTILISER DANS UN AUTRE CONTEXTE)  
+        77 Wconfirm PIC A(30).
+        77 WchoixCo PIC 9(1).
+        77 Wconnect PIC 9(1). 
+
+
 
     	*>Variables pass réservation
         77 nomPa     PIC 9(3).
@@ -230,6 +252,17 @@ WORKING-STORAGE SECTION.
 PROCEDURE DIVISION.
 
       *> Vérifiaction présence des fichiers 
+
+       OPEN I-O fusers
+       IF fu_stat =35 THEN
+              OPEN OUTPUT fusers
+              CLOSE fusers
+              PERFORM INIT_ADMIN
+       ELSE 
+              CLOSE fusers
+       END-IF
+
+
        OPEN I-O fscenes
        IF fs_stat =35 THEN
               OPEN OUTPUT fscenes
@@ -287,10 +320,42 @@ PROCEDURE DIVISION.
        ELSE 
               CLOSE feditions
        END-IF
-      *> Menu principal
+
+      *> Mise à jour des variables de connection en cas d'arrêt brutal 
+       MOVE 0 TO WchoixCo 
+       MOVE 0 TO Wconnect 
+
+
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
-         PERFORM WITH TEST AFTER UNTIL choixMenu<9                 
-              DISPLAY '  _____________* Menu principal *_________'
+        PERFORM WITH TEST AFTER UNTIL choixMenu<9  
+        *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
+       
+
+      *> Menu festivallier 
+          DISPLAY "  ______________* Bienvenue *_____________" 
+          DISPLAY ' |Quitter le programme        :          0|'        
+          DISPLAY ' |Consulter programmation     :          1|'
+          DISPLAY ' |Afficher les tarifs         :          2|'
+          DISPLAY ' |Reserver                    :          3|'
+          DISPLAY ' |Gestionnaire, se connecter  :          4|'
+          DISPLAY ' |________________________________________|'
+          DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+          ACCEPT choixMenu
+           EVALUATE choixMenu
+             WHEN 1  DISPLAY AFFICHER_PROGRAMMATION 
+             WHEN 2  DISPLAY PERFORM AFFICHER_PASS_EDITION
+             WHEN 3  DISPLAY PERFORM AJOUTER_RESERVATION
+             WHEN 4 PERFORM CONNEXION_USER
+           END-EVALUATE
+    
+
+       IF Wconnect = 1 
+      *> Menu gestionnaire 
+       PERFORM WITH TEST AFTER UNTIL choixMenu=0 
+         PERFORM WITH TEST AFTER UNTIL choixMenu<9   
+              DISPLAY ' |   Connecté en tant que : ', fu_id   
+
+              DISPLAY '  ___________* Menu gestionnaire *________'
               DISPLAY ' |Quitter le programme        :          0|'
               DISPLAY ' |Gestion des reservations    :          1|'
               DISPLAY ' |Gestion des pass            :          2|'
@@ -298,7 +363,8 @@ PROCEDURE DIVISION.
               DISPLAY ' |Gestion des représentations :          4|'
               DISPLAY ' |Gestion des scènes          :          5|'
               DISPLAY ' |Gestion des éditions        :          6|'
-              DISPLAY ' |Reset du jeu de données     :          7|'
+              DISPLAY ' |Gestion des utilisateurs    :          7|'
+              DISPLAY ' |Reset du jeu de données     :          8|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choixMenu
@@ -309,11 +375,166 @@ PROCEDURE DIVISION.
                WHEN 4 PERFORM GESTION_REPRESENTATIONS
                WHEN 5 PERFORM GESTION_SCENES
                WHEN 6 PERFORM GESTION_EDITIONS
-               WHEN 7 PERFORM RESET_DONNEES
+               WHEN 7 PERFORM GESTION_USERS
+               WHEN 8 PERFORM RESET_DONNEES
               END-EVALUATE
          END-PERFORM
        END-PERFORM
+       END-IF
+
+       END-PERFORM
+       END-PERFORM 
+  
+
+       IF Wconnect =1 
+       DISPLAY fu_id, 
+       " Vous avez bien été déconnecté avant la fin du programme" 
+       MOVE 0 TO Wconnect 
+       CLOSE fusers
+       END-IF
+
        STOP RUN.
+
+       *> PARTIE UTILISATEUR 
+
+       *> Gestion des utilisateur 
+        GESTION_USERS. 
+        PERFORM WITH TEST AFTER UNTIL WchoixCo=0 
+          PERFORM WITH TEST AFTER UNTIL WchoixCo<9     
+            IF Wconnect = 1
+            DISPLAY ' |   Connecté en tant que : ', fu_id  
+            END-IF                               
+            DISPLAY '  _________* Gestion des comptes *________'
+            DISPLAY ' |Annuler                    :           0|'
+            IF Wconnect = 0 
+            DISPLAY ' |Connexion                  :           1|'
+            END-IF
+            IF Wconnect = 1 
+            DISPLAY ' |Ajouter un utilisateur     :           2|'
+            DISPLAY ' |Déconnexion                :           3|'
+            DISPLAY ' |Changer mot de passe       :           4|'
+            END-IF 
+            DISPLAY ' |________________________________________|'
+            DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+            ACCEPT WchoixCo
+            EVALUATE WchoixCo
+            WHEN 1 PERFORM CONNEXION_USER
+            WHEN 2 PERFORM AJOUTER_USER
+            WHEN 3 PERFORM DECONNEXION 
+            WHEN 4 PERFORM PASSWORD_USER
+            END-EVALUATE
+          END-PERFORM
+        END-PERFORM.
+
+
+        INIT_ADMIN. 
+        OPEN I-O fusers
+
+        MOVE "ADMIN" TO fu_id
+        MOVE "ADMIN" TO fu_pass 
+        MOVE 1 TO fu_ad
+
+        WRITE fiTampon
+        END-WRITE 
+
+        CLOSE fusers.
+
+
+        CONNEXION_USER. 
+        IF Wconnect = 1 
+         DISPLAY "Déconnection de l'utilisateur : " , fu_id
+         PERFORM DECONNEXION
+        END-IF 
+
+        OPEN I-O fusers 
+        DISPLAY "Saisir votre nom d'utilisateur" 
+        ACCEPT fu_id
+        PERFORM VERIF_USER 
+        IF Wtrouve = 1 
+         DISPLAY "Saisir mot de passe"
+         Accept Wconfirm 
+         IF fu_pass = Wconfirm 
+            MOVE 1 TO Wconnect
+            DISPLAY "Connecté" 
+         ELSE 
+            DISPLAY "Echec de l'authentification"
+            CLOSE fusers
+         END-IF 
+        ELSE 
+         DISPLAY "Nom d'utilisateur inconnu"
+        END-IF.
+
+        DECONNEXION. 
+         MOVE 0 TO Wconnect
+         MOVE 0 TO fu_ad
+        CLOSE fusers.
+
+        AJOUTER_USER. 
+        IF Wconnect = 1 AND fu_ad =1
+         PERFORM DECONNEXION
+         OPEN I-O fusers
+         DISPLAY "Saisir votre nom d'utilisateur" 
+         ACCEPT fu_id
+         
+         PERFORM VERIF_USER 
+         IF Wtrouve = 1 
+          DISPLAY "Nom utilisateur déjà utilidé, creation impossible" 
+         ELSE 
+            MOVE "A" TO Wconfirm 
+            PERFORM TEST AFTER UNTIL Wconfirm = fu_pass 
+             DISPLAY "Saisir mot de passe"
+             ACCEPT fu_pass
+             DISPLAY "Confirmation, veuillez saisir à nouveau votre mot de passe" 
+             ACCEPT Wconfirm 
+             IF Wconfirm = fu_pass 
+              DISPLAY "Mots de passe identiques" 
+             ELSE 
+              DISPLAY "Mots de passe différents"
+             END-IF 
+            END-PERFORM 
+            MOVE 0 TO fu_ad
+            WRITE fiTampon
+            INVALID KEY DISPLAY "Erreur lors de l'enregistrement"
+            NOT INVALID KEY DISPLAY "Compte enregistré" 
+            END-WRITE 
+
+         END-IF
+        ELSE 
+         DISPLAY "Veuillez vous connecter en tant qu'administrateur avant de creer un compte"
+        END-IF.
+
+        PASSWORD_USER.
+        IF Wconnect = 1
+        DISPLAY 'Connecté en tant que : ', fu_id 
+        READ fusers
+        MOVE "A" TO Wconfirm 
+        PERFORM TEST AFTER UNTIL Wconfirm = fu_pass 
+         DISPLAY "Saisir mot de passe"
+         ACCEPT fu_pass
+         DISPLAY "Confirmation, veuillez saisir à nouveau votre mot de passe" 
+         ACCEPT Wconfirm 
+         IF Wconfirm = fu_pass 
+          DISPLAY "Mots de passe identiques" 
+         ELSE 
+          DISPLAY "Mots de passe différents"
+         END-IF 
+        END-PERFORM
+        REWRITE fiTampon
+        INVALID KEY DISPLAY "Erreur lors de l'enregistrement"
+        NOT INVALID KEY DISPLAY "Compte enregistré" 
+        END-REWRITE
+        ELSE 
+        DISPLAY "Veuillez vous connecter avant de changer votre mot de passe"
+        END-IF. 
+
+        VERIF_USER. 
+        MOVE 0 TO Wtrouve
+        READ fusers 
+        NOT INVALID KEY 
+        MOVE 1 TO Wtrouve. 
+
+
+
 
       *> Gestion des réservations
        GESTION_RESERVATIONS.
@@ -600,7 +821,6 @@ PROCEDURE DIVISION.
 
 
               CLOSE feditions.
-
       RECHERCHER_RESERVATION.
               PERFORM WITH TEST AFTER UNTIL choix=0 
                PERFORM WITH TEST AFTER UNTIL choix<9                 
@@ -2220,6 +2440,10 @@ PROCEDURE DIVISION.
        DISPLAY "Vous désirez créer un nouveau jeu de données."
        DISPLAY "Attention, cette action supprimera toutes les données de"
        DISPLAY "tous les fichiers et les remplacera par des nouvelles."
+       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017.
+       DSIPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
+       DISPLAY "Le jour 2 comprend 19 résas, soit une seule restante"
+       DISPLAY "Le jour 3, seulement une résa.
        DISPLAY "Etes-vous sur ? :"
        DISPLAY " 1 - Oui"
        DISPLAY " 2 - Non"       
@@ -2234,6 +2458,7 @@ PROCEDURE DIVISION.
              OPEN OUTPUT feditions
              OPEN OUTPUT fpass
              OPEN OUTPUT freservations
+             OPEN OUTPUT fincrements
 
              MOVE "ScèneA" TO fs_nomSce
              MOVE 2015 TO fs_dateA
@@ -3128,8 +3353,12 @@ PROCEDURE DIVISION.
              MOVE "adresse@mail.com" TO fres_adresseEmail
              MOVE 0706050403 TO fres_numTel
              MOVE 01011990 TO fres_dateNaissance
-             WRITE fresTampon END-WRITE
+             WRITE fresTampon END-WRITE             
+              
+             MOVE 45 TO fi_idResa
+             WRITE finTampon END-WRITE
 
+             CLOSE fincrements
              CLOSE freservations
              CLOSE fpass
              CLOSE feditions
