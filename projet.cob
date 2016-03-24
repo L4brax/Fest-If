@@ -1672,8 +1672,8 @@ PROCEDURE DIVISION.
           WITH NO ADVANCING
           ACCEPT frep_jour
         END-PERFORM
-        PERFORM WITH TEST AFTER UNTIL dispoGr = 0
-        PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
+        PERFORM WITH TEST AFTER UNTIL dispoGr = 0 AND frep_heureDebut + 200 <= 2400
+        PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 10 AND frep_heureDebut <= 22
           DISPLAY 'Indiquer l''heure de début (HH) : '
           WITH NO ADVANCING
           ACCEPT frep_heureDebut
