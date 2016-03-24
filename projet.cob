@@ -660,6 +660,25 @@ PROCEDURE DIVISION.
               END-IF
               CLOSE freservations.
 
+       AJOUTER_RESERVATION_ACTU.
+       OPEN I-O freservations 
+        OPEN INPUT fincrements
+         READ fincrements
+         MOVE fi_idResa TO fres_id
+          *>DISPLAY "Resa Avant  add : ",fi_idResa
+         ADD 1 TO fi_idResa 
+         CLOSE fincrements 
+         OPEN OUTPUT fincrements
+        *>DISPLAY "Resa : ",fi_idResa
+         WRITE finTampon
+         END-WRITE
+         CLOSE fincrements
+
+       READ freservations
+       MOVE 01 TO j
+       MOVE 01 TO m
+       MOVE 1801 TO j.
+
        MODIFIER_RESERVATION.
               PERFORM WITH TEST AFTER UNTIL choix=0 OR choix = 1 
                 DISPLAY 'Nous allons vous demander l''identifiant du'
@@ -2765,6 +2784,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO fe_dateA
              MOVE 30 TO fe_capacite
              MOVE 6 TO fe_nbArtiste
+             MOVE 3 TO fe_NbScene
              MOVE 3 TO fe_nbResaJourUn
              MOVE 3 TO fe_nbResaJourDeux
              MOVE 3 TO fe_nbResaJourTrois
@@ -2778,6 +2798,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO fe_dateA
              MOVE 20 TO fe_capacite
              MOVE 6 TO fe_nbArtiste
+             MOVE 3 TO fe_NbScene
              MOVE 20 TO fe_nbResaJourUn
              MOVE 19 TO fe_nbResaJourDeux
              MOVE 1 TO fe_nbResaJourTrois
@@ -2791,6 +2812,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO fe_dateA
              MOVE 30 TO fe_capacite
              MOVE 6 TO fe_nbArtiste
+             MOVE 3 TO fe_NbScene
              MOVE 0 TO fe_nbResaJourUn
              MOVE 0 TO fe_nbResaJourDeux
              MOVE 0 TO fe_nbResaJourTrois
