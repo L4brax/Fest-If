@@ -47,6 +47,7 @@ FILE-CONTROL.
        ALTERNATE RECORD KEY IS frep_nomGr WITH DUPLICATES
        ALTERNATE RECORD KEY IS frep_nomSce WITH DUPLICATES.
 
+
        SELECT frepresentationsTemp ASSIGN TO "representations.dat"
        ORGANIZATION IS INDEXED
        ACCESS IS dynamic
@@ -133,9 +134,8 @@ FILE SECTION.
             03 frep_dateAT PIC 9(4).
             03 frep_nomSceT PIC A(30).
           02 frep_nomGrT PIC A(30).
-          02 frep_cachetT PIC S9(6).
+          02 frep_cachetT PIC S9(9).
           02 frep_nbPersonneMaxT PIC S9(30).
-
 
          FD feditions. 
          01 fedTampon. 
@@ -151,6 +151,7 @@ FILE SECTION.
           02 fe_coutArtistes PIC 9(30).
           02 fe_nbRepresentations PIC 9(2).       
           02 fe_Ca PIC S9(30).                  
+
 
 WORKING-STORAGE SECTION.
       *> Déclarations des zones de compte rendu  
@@ -209,17 +210,17 @@ WORKING-STORAGE SECTION.
         77 WrepSc PIC 9(1).
       *>AJOUT_SCENES 
         77 WnomSc PIC A(4).
-     *> MODIFIER_SCENE
+      *> MODIFIER_SCENE
         77 Wprog PIC 9(1).
-     *> MOFIFIER CAPACITER SCENE
-     *> Correspond au nombre de personne max 
-     *> present sur un scene pour toute les representation  
+      *> MOFIFIER CAPACITER SCENE
+      *> Correspond au nombre de personne max 
+      *> present sur un scene pour toute les representation  
         77 WnbMax PIC 9(2).   
-     *> ANNEE 
+      *> Annee
         77 Wyear PIC 9(4).
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
-     *>  Statistiques
+      *>  Statistiques
         77 WcoutMoyenA PIC 9(30).
         77 WcoutMoyenS PIC 9(30).
         77 nbArtisteN PIC 9(3).
@@ -1268,9 +1269,8 @@ PROCEDURE DIVISION.
         DISPLAY 'Indiquer l''édition de la représentation : '
         WITH NO ADVANCING
         ACCEPT fe_dateA
-        OPEN INPUT feditions 
+        OPEN I-O feditions 
           PERFORM VERIF_EDITION
-        CLOSE feditions
         END-PERFORM
         MOVE 0 TO Wtrouve
           PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1299,67 +1299,79 @@ PROCEDURE DIVISION.
           WITH NO ADVANCING
           ACCEPT minutes
         END-PERFORM
-        COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-        MOVE frep_heureDebut TO heureRep
-        MOVE frep_jour TO jourRep
-        MOVE frepTampon TO frepTamponTemp
-        PERFORM VERIF_DISPO_GROUPE
-        MOVE frepTamponTemp TO frepTampon
-        END-PERFORM
-        *> Incrémentation du nombre d'artiste
-
-        START frepresentations,
-          KEY = frep_nomGr
-            INVALID KEY
-              OPEN I-O feditions
-                READ feditions
-                  NOT INVALID KEY
-                    COMPUTE fe_nbArtiste = fe_nbArtiste + 1
-                    REWRITE fedTampon 
-                END-READ
-              CLOSE feditions
-           END-START
-
-        MOVE nomGr TO frep_nomSce
-        MOVE 0 TO Wtrouve
-        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-        MOVE frep_dateA to fs_dateA
-        PERFORM AFFICHER_SCENES_ANNEE_SP
-        DISPLAY 'Indiquer le nom de la scènes : '
-        WITH NO ADVANCING
-        ACCEPT frep_nomSce
-        OPEN INPUT fscenes
-         MOVE frep_nomSce to fs_nomSce
-          MOVE frep_dateA to fs_dateA               
-         READ fscenes
-          INVALID KEY 
-           DISPLAY 'La scene n''existe pas '
-          NOT INVALID KEY 
-           MOVE 1 TO Wtrouve
-           DISPLAY 'La scene est présente' 
-         END-READ 
-        CLOSE fscenes
-        END-PERFORM
-        PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
+              COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+              MOVE frep_heureDebut TO heureRep
+              MOVE frep_jour TO jourRep
+              MOVE frepTampon TO frepTamponTemp
+              PERFORM VERIF_DISPO_GROUPE
+              MOVE frepTamponTemp TO frepTampon
+              END-PERFORM
+         
+              MOVE nomGr TO frep_nomSce
+              MOVE 0 TO Wtrouve
+              PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+              MOVE frep_dateA to fs_dateA
+              PERFORM AFFICHER_SCENES_ANNEE_SP
+              DISPLAY 'Indiquer le nom de la scènes : '
+              WITH NO ADVANCING
+              ACCEPT frep_nomSce
+              OPEN INPUT fscenes
+               MOVE frep_nomSce to fs_nomSce
+                MOVE frep_dateA to fs_dateA               
+               READ fscenes
+                INVALID KEY 
+                 DISPLAY 'La scene n''existe pas '
+                NOT INVALID KEY 
+                 MOVE 1 TO Wtrouve
+                 DISPLAY 'La scene est présente' 
+               END-READ 
+              CLOSE fscenes
+              END-PERFORM
+               PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
           DISPLAY 'Indiquer le cachet de l''artiste : '
           WITH NO ADVANCING
           ACCEPT frep_cachet
         END-PERFORM
-        OPEN INPUT fscenes
+        
+              PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax <= fs_capacite
+                DISPLAY 'Nombre de personne max : '
+                WITH NO ADVANCING
+                ACCEPT frep_nbPersonneMax
+              END-PERFORM
+              WRITE frepTampon 
+                INVALID KEY
+                 DISPLAY 'erreur interne  ******'
+               *> Si on a bien ajouté la représentation 
+               *> on met à jour l'édition  
+                NOT INVALID KEY
+                DISPLAY 'représentation ajoutée'
+                READ feditions
+                  INVALID KEY DISPLAY "Erreur lors du chargement de l'édition"
+                       
+                  NOT INVALID KEY 
+                    *> Incrémentation du nombre de représentation 
+                    ADD 1 TO fe_nbRepresentations END-ADD 
+                    ADD frep_cachet TO fe_coutArtistes END-ADD
+                    REWRITE fedTampon 
+                      INVALID KEY DISPLAY "Erreur de mise à jour de l'édition"
+                      NOT INVALID KEY DISPLAY "Mise à jour de l'édition effectuée"
+                    END-REWRITE
+                  END-READ
+                      *> Incrémentation du nombre d'artiste
 
-        Close fscenes
-        PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax <= fs_capacite
-          DISPLAY 'Indiquer le nombre max de personnes sur scène : '
-          WITH NO ADVANCING
-          ACCEPT frep_nbPersonneMax
-        END-PERFORM
-        WRITE frepTampon 
-          INVALID KEY
-          DISPLAY 'erreur interne  ******'
-          NOT INVALID KEY
-          DISPLAY 'représentation ajoutée'
-        END-WRITE
-        CLOSE frepresentations.
+                  START frepresentations,
+                        KEY = frep_nomGr
+                        INVALID KEY
+                        READ feditions
+                          NOT INVALID KEY
+                            COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                            REWRITE fedTampon 
+                        END-READ
+                    END-START
+              END-WRITE
+              CLOSE feditions
+              CLOSE frepresentations.
+
 
         AFFICHER_REPRESENTATION.
           MOVE 0 to Wfin
@@ -1457,44 +1469,44 @@ PROCEDURE DIVISION.
 
 
        SUPPRIMER_REPRESENTATION.
-         OPEN I-O frepresentations
-         DISPLAY 'Indiquer le nom de la scène : '
-         WITH NO ADVANCING
-         ACCEPT frep_nomSce
-         DISPLAY 'Indiquer l''édition : '
-         WITH NO ADVANCING
-         ACCEPT frep_dateA
-         DISPLAY 'Indiquer le jour de représentation : '
-         WITH NO ADVANCING
-         ACCEPT frep_jour
-         DISPLAY 'Indiquer l''heure de représentation (HH): '
-         WITH NO ADVANCING
-         ACCEPT frep_heureDebut
-         DISPLAY 'et les minutes (MM) : '
-         WITH NO ADVANCING
-         ACCEPT minutes
-         COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-         READ frepresentations
-          MOVE frep_nomGr TO nomGr
-         DELETE frepresentations RECORD
-          INVALID KEY
-            DISPLAY 'La représentation n existe pas'
-          NOT INVALID KEY
-            MOVE nomGr TO frep_nomGr
-           DISPLAY 'Représentation supprimée'
-           DISPLAY frep_nomGr
-            START frepresentations,
-            KEY = frep_nomGr
-              INVALID KEY
-                OPEN I-O feditions
-                READ feditions
-                NOT INVALID KEY
-                  COMPUTE fe_nbArtiste = fe_nbArtiste - 1
-                  REWRITE fedTampon 
-              END-READ
-            CLOSE feditions
-             END-START
-      CLOSE frepresentations.
+              OPEN I-O frepresentations
+              PERFORM AFFICHER_REPRESENTATION
+                 MOVE fe_dateA TO frep_dateA
+                 DISPLAY 'Nom de la scène :'
+                 ACCEPT frep_nomSce
+                 DISPLAY 'Jour :'
+                 ACCEPT frep_jour
+                 DISPLAY 'Indiquer l''heure de représentation (HH): '
+                 WITH NO ADVANCING
+                 ACCEPT frep_heureDebut
+                 DISPLAY 'et les minutes (MM) : '
+                 WITH NO ADVANCING
+                 ACCEPT minutes
+                 COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+                 READ frepresentations
+                  MOVE frep_nomGr TO nomGr
+                 DELETE frepresentations RECORD
+                  INVALID KEY
+                    DISPLAY 'La représentation n existe pas'
+                  NOT INVALID KEY
+                    MOVE nomGr TO frep_nomGr
+                   DISPLAY 'Représentation supprimée'
+                   DISPLAY frep_nomGr
+                    START frepresentations,
+                    KEY = frep_nomGr
+                      INVALID KEY
+                        OPEN I-O feditions
+                        READ feditions
+                        NOT INVALID KEY
+                         MOVE fe_coutArtistes TO WCouTemp
+                         COMPUTE fe_nbArtiste = fe_nbArtiste - 1 END-COMPUTE 
+                         COMPUTE fe_coutArtistes = WCouTemp - 1 END-COMPUTE 
+                         REWRITE fedTampon
+                      END-READ
+                    CLOSE feditions
+                     END-START
+              CLOSE frepresentations.
+
        
        MODIFIER_REPRESENTATION.
           OPEN I-O frepresentations
