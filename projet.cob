@@ -47,17 +47,6 @@ FILE-CONTROL.
        ALTERNATE RECORD KEY IS frep_nomGr WITH DUPLICATES
        ALTERNATE RECORD KEY IS frep_nomSce WITH DUPLICATES.
 
-
-       SELECT frepresentationsTemp ASSIGN TO "representations.dat"
-       ORGANIZATION IS INDEXED
-       ACCESS IS dynamic
-       FILE STATUS IS frepTemp_stat
-       RECORD KEY IS frep_cleRepT
-       ALTERNATE RECORD KEY IS frep_dateAT WITH DUPLICATES
-       ALTERNATE RECORD KEY IS frep_nomGrT WITH DUPLICATES
-       ALTERNATE RECORD KEY IS frep_nomSceT WITH DUPLICATES.
-
-
        SELECT feditions ASSIGN TO "editions.dat"
        ORGANIZATION INDEXED
        ACCESS IS DYNAMIC
@@ -138,17 +127,6 @@ FILE SECTION.
           02 frep_cachet PIC S9(6).
           02 frep_nbPersonneMax PIC S9(30).
 
-        FD frepresentationsTemp.
-        01 frepTamponTemp.
-          02 frep_cleRepT. 
-            03 frep_jourT  PIC 9(2).
-            03 frep_heureDebutT PIC 9(4).
-            03 frep_dateAT PIC 9(4).
-            03 frep_nomSceT PIC A(30).
-          02 frep_nomGrT PIC A(30).
-          02 frep_cachetT PIC S9(9).
-          02 frep_nbPersonneMaxT PIC S9(30).
-
          FD feditions. 
          01 fedTampon. 
           02 fe_dateA PIC 9(4). 
@@ -215,6 +193,11 @@ WORKING-STORAGE SECTION.
         77 nomDernier PIC A(30).
         77 styleDernier PIC A(30).
         77 choixModifReserv PIC 9(2).
+        77 minutes PIC 9(2).
+        77 jourRep PIC S9(2).
+        77 heureRep PIC S9(4).
+        77 dispoGr PIC 9.
+        77 anneRep PIC 9(4).
 
     	*>Variable scenes
       *>Variables editions
@@ -222,10 +205,6 @@ WORKING-STORAGE SECTION.
         77 Wresultat PIC 9(9).
         77 WchoixModifReserv PIC 9(2).
         77 Wjour      PIC 9.
-        77 minutes PIC 9(2).
-        77 jourRep PIC S9(2).
-        77 heureRep PIC S9(4).
-        77 dispoGr PIC 9.
 
     	*>VARIABLES SCENE 
         77 WnbScene PIC 9(2).
@@ -1406,7 +1385,7 @@ PROCEDURE DIVISION.
               DISPLAY ' |Afficher les groupes                 : 2|'
               DISPLAY ' |Supprimer un groupe                  : 3|'
               DISPLAY ' |Modifier un groupe                   : 4|'
-              DISPLAY ' |Afficher le nombre de groupe/edition : 5|'
+              DISPLAY ' |Afficher le nombre moyen de groupe   : 5|'
               DISPLAY ' |Evolution deux années successives    : 6|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
@@ -1416,9 +1395,8 @@ PROCEDURE DIVISION.
               WHEN 2 PERFORM AFFICHER_GROUPES
               WHEN 3 PERFORM SUPPRIMER_GROUPE
               WHEN 4 PERFORM MODIFIER_GROUPE
-              WHEN 5 PERFORM NB_ARTISTE_EDITION
+              WHEN 5 PERFORM MOY_NB_ARTISTE
               WHEN 6 PERFORM EVO_ARTISTE_EDITION
-              WHEN 7 PERFORM MOY_NB_ARTISTE
               END-EVALUATE
         END-PERFORM
        END-PERFORM.
@@ -1631,25 +1609,27 @@ PROCEDURE DIVISION.
           WITH NO ADVANCING
           ACCEPT frep_jour
         END-PERFORM
-        PERFORM WITH TEST AFTER UNTIL dispoGr = 0
-        PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
-          DISPLAY 'Indiquer l''heure de début (HH) : '
-          WITH NO ADVANCING
-          ACCEPT frep_heureDebut
+        *>vérif disponibilité du groupe 
+        PERFORM WITH TEST AFTER UNTIL dispoGr = 0 AND frep_heureDebut + 200 <= 2400
+          PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 10 AND frep_heureDebut + 2 <= 24
+            DISPLAY 'Indiquer l''heure de début (HH) : '
+            WITH NO ADVANCING
+            ACCEPT frep_heureDebut
+          END-PERFORM
+          PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
+            DISPLAY 'et les minutes (MM) : '
+            WITH NO ADVANCING
+            ACCEPT minutes
+          END-PERFORM
+            COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+            MOVE frep_dateA TO anneRep
+            MOVE frep_heureDebut TO heureRep
+            MOVE frep_jour TO jourRep
+            PERFORM VERIF_DISPO_GROUPE
+            MOVE anneRep TO frep_dateA
+            MOVE heureRep TO frep_heureDebut
+            MOVE jourRep TO frep_jour
         END-PERFORM
-        PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
-          DISPLAY 'et les minutes (MM) : '
-          WITH NO ADVANCING
-          ACCEPT minutes
-        END-PERFORM
-              COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-              MOVE frep_heureDebut TO heureRep
-              MOVE frep_jour TO jourRep
-              MOVE frepTampon TO frepTamponTemp
-              PERFORM VERIF_DISPO_GROUPE
-              MOVE frepTamponTemp TO frepTampon
-              END-PERFORM
-         
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1680,7 +1660,7 @@ PROCEDURE DIVISION.
                 DISPLAY 'Nombre de personne max : '
                 WITH NO ADVANCING
                 ACCEPT frep_nbPersonneMax
-                IF frep_nbPersonneMax <= fs_capacite THEN
+                IF frep_nbPersonneMax > fs_capacite THEN
                   DISPLAY 'La capacité max de la scène est de : ',fs_capacite
                 END-IF
               END-PERFORM
@@ -1756,11 +1736,13 @@ PROCEDURE DIVISION.
               MOVE 1 TO Wfin
             NOT AT END
               IF frep_jour = jourRep THEN
-                IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
+              IF heureRep = frep_heureDebut AND heureRep = frep_heureDebut + 200
                 DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
                 MOVE 1 TO dispoGr
-                END-IF
-                IF frep_heureDebut >= heureRep AND frep_heureDebut <= heureRep + 200
+                ELSE IF heureRep > frep_heureDebut AND heureRep < frep_heureDebut + 200
+                DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
+                MOVE 1 TO dispoGr
+                ELSE IF frep_heureDebut > heureRep AND frep_heureDebut < heureRep + 200
                 DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
                 MOVE 1 TO dispoGr
                 END-IF
@@ -1802,7 +1784,7 @@ PROCEDURE DIVISION.
                   IF dateA = frep_dateA THEN
                     IF frep_jour = Wjour THEN
                     IF Wcpt = 0 THEN
-                      DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
+                      DISPLAY '|______________________* Programmation jour ',Wcount,' *_____________________|'
                       DISPLAY '|Groupe                        |Scène                         |Heure|'
                     END-IF
                       DISPLAY '|',frep_nomGr,'|', frep_nomSce,' |',frep_heureDebut,' |'
@@ -1817,19 +1799,22 @@ PROCEDURE DIVISION.
              END-START 
              COMPUTE Wcount = Wcount + 1
              IF Wtrouve = 1 THEN
-             DISPLAY '|______________________________|______________________________|_____|'
+             DISPLAY '|______________________________|_______________________________|_____|'
              END-IF
           END-PERFORM
           CLOSE frepresentations.
 
 
        SUPPRIMER_REPRESENTATION.
-              OPEN I-O frepresentations
-              PERFORM AFFICHER_REPRESENTATION
-                 MOVE fe_dateA TO frep_dateA
-                 DISPLAY 'Nom de la scène :'
+                  OPEN I-O frepresentations
+                   DISPLAY 'Indiquer l''édition : '
+                   WITH NO ADVANCING
+                   ACCEPT frep_dateA
+                 DISPLAY 'Indiquer le nom de la scène : '
+                 WITH NO ADVANCING
                  ACCEPT frep_nomSce
-                 DISPLAY 'Jour :'
+                 DISPLAY 'Indiquer le jour de représentation : '
+                 WITH NO ADVANCING
                  ACCEPT frep_jour
                  DISPLAY 'Indiquer l''heure de représentation (HH): '
                  WITH NO ADVANCING
@@ -1840,13 +1825,14 @@ PROCEDURE DIVISION.
                  COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
                  READ frepresentations
                   MOVE frep_nomGr TO nomGr
+                  DISPLAY frepTampon
                  DELETE frepresentations RECORD
                   INVALID KEY
                     DISPLAY 'La représentation n existe pas'
                   NOT INVALID KEY
+                    DISPLAY 'Représentation supprimée'
                     MOVE nomGr TO frep_nomGr
-                   DISPLAY 'Représentation supprimée'
-                   DISPLAY frep_nomGr
+                    DISPLAY frep_nomGr
                     START frepresentations,
                     KEY = frep_nomGr
                       INVALID KEY
@@ -1860,6 +1846,7 @@ PROCEDURE DIVISION.
                       END-READ
                     CLOSE feditions
                      END-START
+                  END-DELETE
               CLOSE frepresentations.
 
        
@@ -2457,6 +2444,7 @@ PROCEDURE DIVISION.
        AFFICHAGE_ANNEES_EDITIONS.
        OPEN I-O feditions 
        MOVE 0 TO Wfin
+       DISPLAY ' * Toutes les éditions disponibles'
        PERFORM WITH TEST AFTER UNTIL Wfin = 1
          READ feditions NEXT
            AT END 
