@@ -204,6 +204,8 @@ WORKING-STORAGE SECTION.
         77 Wtrouve   PIC 9(1).
         77 Wprix     PIC 9(4).
         77 Wcpt      PIC 9.
+        77 WanActu   PIC 9(4).
+        77 Wsaisie   PIC A.
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
         77 styleGr PIC A(30).
@@ -330,7 +332,7 @@ PROCEDURE DIVISION.
         PERFORM WITH TEST AFTER UNTIL choixMenu<9  
       *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
        
-
+          MOVE 2016 TO WanActu
       *> Menu festivallier 
           DISPLAY "  ______________* Bienvenue *_____________" 
           DISPLAY ' |Quitter le programme        :          0|'        
@@ -583,7 +585,7 @@ PROCEDURE DIVISION.
               DISPLAY '1 pour oui, 0 pour non : 'WITH NO ADVANCING
               ACCEPT choix
               *> Si l'utilisateur veut afficher
-              IF choix = 1 THEN 
+              IF choix = 1 AND Wconnect = 1 THEN 
                 PERFORM WITH TEST AFTER UNTIL choix = 0
                   PERFORM AFFICHER_PROGRAMMATION
                   DISPLAY 'Désirez-vous afficher la programmation d''une autre édition?'
@@ -591,14 +593,32 @@ PROCEDURE DIVISION.
                   WITH NO ADVANCING
                   ACCEPT choix
                 END-PERFORM
+              ELSE IF choix = 1 THEN
+                PERFORM AFFICHER_PROGRAMMATION
+                END-IF
               END-IF
               DISPLAY "____________* Nouvelle réservation *__________"
-              DISPLAY 'Indiquer l''édition désirée : '
-              WITH NO ADVANCING
-              ACCEPT fres_dateA
+              IF Wconnect = 1 THEN
+                DISPLAY 'Indiquer l''édition désirée : '
+                WITH NO ADVANCING
+                ACCEPT fres_dateA
+              ELSE 
+                MOVE WanActu TO fres_dateA
+              END-IF
               MOVE fres_dateA TO fp_dateA
-              DISPLAY "_____________* Liste des pass *______________"
-              PERFORM AFFICHER_PASS_EDITION
+              DISPLAY 'Voulez-afficher la liste des pass ainsi que'
+              ' les tarifs?'
+              DISPLAY '1 pour oui, 0 pour non : '
+              WITH NO ADVANCING
+              ACCEPT choix
+              IF choix = 1 THEN
+                DISPLAY "_____________* Liste des pass *______________"
+                PERFORM AFFICHER_PASS_EDITION
+              END-IF
+              MOVE fres_dateA TO fe_dateA
+              OPEN INPUT feditions
+              PERFORM VERIF_EDITION
+              CLOSE feditions
               IF Wtrouve = 1 THEN
                 MOVE fres_dateA TO fe_dateA
                 PERFORM WITH TEST AFTER UNTIL Wtrouve = 1 AND Wallowed = 1
@@ -656,12 +676,27 @@ PROCEDURE DIVISION.
                 END-PERFORM
                 *> Préparation du tempon pour mettre à jour l'edition
                 MOVE fres_dateA TO fe_dateA
-                *> On ajoute la nouvelle réservation 
-                WRITE fresTampon 
-                NOT INVALID KEY
-                  PERFORM MAJ_NBRESERVATION
-                  DISPLAY "___________________________________________"
-                END-WRITE
+
+                DISPLAY "______________* Commande *__________________"
+                PERFORM AFFICHER_RESERVATION
+                PERFORM WITH TEST AFTER UNTIL Wsaisie = 'c' 
+                OR Wsaisie = 'a'
+                  DISPLAY '(c)onfirmer la réservation,'
+                  DISPLAY '(a)nnuler la réservation'
+                  ACCEPT Wsaisie
+                  IF Wsaisie = 'c' THEN
+                  *> On ajoute la nouvelle réservation 
+                    WRITE fresTampon 
+                    NOT INVALID KEY
+                      PERFORM MAJ_NBRESERVATION
+                      DISPLAY "___________________________________________"
+                    END-WRITE
+                  ELSE IF Wsaisie = 'a' THEN
+                      DISPLAY 'Réservation annulée'
+                    END-IF
+                  END-IF
+                END-PERFORM
+                  
               END-IF
               CLOSE freservations.
 
@@ -989,15 +1024,25 @@ PROCEDURE DIVISION.
 
               *> Procédure permettant d'afficher le tampon frep_dateA
        AFFICHER_RESERVATION.
-        DISPLAY 'Id de réservation  : ', fres_id 
-        DISPLAY 'Pass               : ', fres_nomPa
-        DISPLAY 'Prénom             : ', fres_prenom
-        DISPLAY 'Département        : ', fres_dep
-        DISPLAY 'Edition            : ', fres_dateA 
-        DISPLAY 'Adresse mail       : ', fres_adresseEmail
-        DISPLAY 'Numéro de téléphone: ', fres_numTel
-        DISPLAY 'Date de naissance  : ', fres_dateNaissance
-        DISPLAY '_________________________________________'.
+        OPEN INPUT fpass 
+        MOVE fres_nomPa TO fp_nomPa
+        MOVE fres_dateA TO fp_dateA
+        READ fpass
+        INVALID KEY 
+          DISPLAY 'Il y a un problème avec le pass'
+        NOT INVALID KEY
+          DISPLAY 'Id de réservation  : ', fres_id 
+          DISPLAY 'Pass               : ', fres_nomPa
+          DISPLAY 'Prénom             : ', fres_prenom
+          DISPLAY 'Département        : ', fres_dep
+          DISPLAY 'Edition            : ', fres_dateA 
+          DISPLAY 'Adresse mail       : ', fres_adresseEmail
+          DISPLAY 'Numéro de téléphone: ', fres_numTel
+          DISPLAY 'Date de naissance  : ', fres_dateNaissance
+          DISPLAY '_________________________________________'
+          DISPLAY 'Total dû           : ', fp_prix ,'€'
+        END-READ
+        CLOSE fpass.
 
       *>Gestion des pass
       *> Affichage du menu de gestion des pass
@@ -1716,10 +1761,14 @@ PROCEDURE DIVISION.
         AFFICHER_PROGRAMMATION.
           OPEN INPUT frepresentations                     
           MOVE 1 TO Wcount   
-          PERFORM AFFICHAGE_ANNEES_EDITIONS
-          DISPLAY 'Indiquer l''édition : '
-          WITH NO ADVANCING
-          ACCEPT frep_dateA 
+          IF Wconnect = 1 THEN
+            PERFORM AFFICHAGE_ANNEES_EDITIONS
+            DISPLAY 'Indiquer l''édition : '
+            WITH NO ADVANCING
+            ACCEPT frep_dateA 
+          ELSE 
+            MOVE WanActu TO frep_dateA
+          END-IF
           MOVE frep_dateA TO dateA
           PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
             MOVE 0 TO Wcpt
@@ -1745,7 +1794,7 @@ PROCEDURE DIVISION.
                       DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
                       DISPLAY '|Groupe                        |Scène                         |Heure|'
                     END-IF
-                      DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
+                      DISPLAY '|',frep_nomGr,'|', frep_nomSce,' |',frep_heureDebut,' |'
                       COMPUTE Wcpt = Wcpt + 1
                     END-IF
                     
@@ -2517,10 +2566,6 @@ PROCEDURE DIVISION.
        DISPLAY "Attention, cette action supprimera toutes les données de"
        DISPLAY "tous les fichiers et les remplacera par des nouvelles."
        DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017."
-<<<<<<< HEAD
-
-=======
->>>>>>> ad1e9c312442c17113ba303483bdd9e59310af18
        DISPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
        DISPLAY "Le jour 2 comprend 19 résas, soit une seule restante"
        DISPLAY "Le jour 3, seulement une résa."
