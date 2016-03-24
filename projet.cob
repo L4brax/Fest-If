@@ -1420,10 +1420,10 @@ PROCEDURE DIVISION.
 
        SUPPRIMER_REPRESENTATION.
               OPEN I-O frepresentations
+              PERFORM AFFICHER_REPRESENTATION
+                 MOVE fe_dateA TO frep_dateA
                  DISPLAY 'Nom de la scène :'
                  ACCEPT frep_nomSce
-                 DISPLAY 'Année édition :'
-                 ACCEPT frep_dateA
                  DISPLAY 'Jour :'
                  ACCEPT frep_jour
                  DISPLAY 'Indiquer l''heure de représentation (HH): '
@@ -1448,8 +1448,10 @@ PROCEDURE DIVISION.
                         OPEN I-O feditions
                         READ feditions
                         NOT INVALID KEY
-                          COMPUTE fe_nbArtiste = fe_nbArtiste - 1
-                          REWRITE fedTampon 
+                         MOVE fe_coutArtistes TO WCouTemp
+                         COMPUTE fe_nbArtiste = fe_nbArtiste - 1 END-COMPUTE 
+                         COMPUTE fe_coutArtistes = WCouTemp - 1 END-COMPUTE 
+                         REWRITE fedTampon
                       END-READ
                     CLOSE feditions
                      END-START
