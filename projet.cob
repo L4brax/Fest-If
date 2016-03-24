@@ -342,9 +342,9 @@ PROCEDURE DIVISION.
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
           ACCEPT choixMenu
            EVALUATE choixMenu
-             WHEN 1  DISPLAY AFFICHER_PROGRAMMATION 
-             WHEN 2  DISPLAY PERFORM AFFICHER_PASS_EDITION
-             WHEN 3  DISPLAY PERFORM AJOUTER_RESERVATION
+             WHEN 1  PERFORM AFFICHER_PROGRAMMATION 
+             WHEN 2  PERFORM AFFICHER_PASS_EDITION
+             WHEN 3  PERFORM AJOUTER_RESERVATION
              WHEN 4 PERFORM CONNEXION_USER
            END-EVALUATE
     
@@ -537,6 +537,7 @@ PROCEDURE DIVISION.
 
 
       *> Gestion des réservations
+      *> Menu de la gestion des réservations
        GESTION_RESERVATIONS.
       	PERFORM WITH TEST AFTER UNTIL choix=0 
          PERFORM WITH TEST AFTER UNTIL choix<9                 
@@ -556,12 +557,13 @@ PROCEDURE DIVISION.
          END-PERFORM
        END-PERFORM.
 
+       *> Fichiers: fincrements en maj, freservations en maj
+       *> Ajoute une reservation
        AJOUTER_RESERVATION.
               OPEN I-O freservations 
                OPEN INPUT fincrements
                 READ fincrements
                 MOVE fi_idResa TO fres_id
-                 *>DISPLAY "Resa Avant  add : ",fi_idResa
                 ADD 1 TO fi_idResa 
                 CLOSE fincrements 
                 OPEN OUTPUT fincrements
@@ -577,6 +579,7 @@ PROCEDURE DIVISION.
               DISPLAY 'Désirez-vous afficher une programmation avant d''effectuer une réservation?'
               DISPLAY '1 pour oui, 0 pour non : 'WITH NO ADVANCING
               ACCEPT choix
+              *> Si l'utilisateur veut afficher
               IF choix = 1 THEN 
                 PERFORM WITH TEST AFTER UNTIL choix = 0
                   PERFORM AFFICHER_PROGRAMMATION
@@ -648,7 +651,9 @@ PROCEDURE DIVISION.
                   ACCEPT fres_numTel
                   INSPECT fres_numTel TALLYING Wcount FOR ALL SPACES
                 END-PERFORM
-                MOVE fres_dateA TO fe_dateA 
+                *> Préparation du tempon pour mettre à jour l'edition
+                MOVE fres_dateA TO fe_dateA
+                *> On ajoute la nouvelle réservation 
                 WRITE fresTampon 
                 NOT INVALID KEY
                   PERFORM MAJ_NBRESERVATION
@@ -657,6 +662,7 @@ PROCEDURE DIVISION.
               END-IF
               CLOSE freservations.
 
+              *> Choix de modification d'une réservation
        MODIFIER_RESERVATION.
               PERFORM WITH TEST AFTER UNTIL choix=0 OR choix = 1 
                 DISPLAY 'Nous allons vous demander l''identifiant du'
@@ -688,7 +694,8 @@ PROCEDURE DIVISION.
                  END-PERFORM
                  END-PERFORM
               END-PERFORM.
-
+              *> Fichiers : freservations en extension
+              *> Modifie le nom d'une réservation
       MODIFIER_RESERVATION_NOM.
               OPEN I-O freservations 
                READ freservations
@@ -706,6 +713,8 @@ PROCEDURE DIVISION.
                END-REWRITE
               CLOSE freservations.
 
+              *> Fichier : freservations en extension
+              *> Modifie l'adresse mail d'une réservation
        MODIFIER_RESERVATION_MAIL.
               OPEN I-O freservations 
                READ freservations
@@ -725,7 +734,8 @@ PROCEDURE DIVISION.
                  DISPLAY "Reservation modifiée"
                END-REWRITE
               CLOSE freservations.
-       
+              *> Fichier : freservations en maj
+              *> Modifie le numéro de téléphone d'un réservation
        MODIFIER_RESERVATION_TEL.
               OPEN I-O freservations 
                READ freservations
@@ -745,7 +755,9 @@ PROCEDURE DIVISION.
                  DISPLAY "Reservation modifiée"
                END-REWRITE
               CLOSE freservations.
-
+              *> fichier : feditions en maj
+              *> Met à jour le fichier des éditions en incrémentant 
+              *> Le nombre de réservations de un suivant le pass séléctionné
        MAJ_NBRESERVATION.
               OPEN I-O feditions 
                READ feditions
@@ -779,9 +791,11 @@ PROCEDURE DIVISION.
                END-REWRITE
 
               CLOSE feditions.
-       
+              *> fichier : feditions en lecture : 
+              *> Vérifie que le jour du pass commandé n'est pas complet
        VERIF_PASS_DISPO.
               OPEN INPUT feditions 
+              MOVE 0 TO Wallowed
                READ feditions
                INVALID KEY 
                DISPLAY "Erreur: le tampon a été altéré."
@@ -818,9 +832,9 @@ PROCEDURE DIVISION.
                     END-IF 
 
                 END-EVALUATE
-
-
               CLOSE feditions.
+
+              *> Menu de choix de recherche des réservations effectuées
       RECHERCHER_RESERVATION.
               PERFORM WITH TEST AFTER UNTIL choix=0 
                PERFORM WITH TEST AFTER UNTIL choix<9                 
@@ -842,6 +856,9 @@ PROCEDURE DIVISION.
                END-PERFORM
               END-PERFORM.
 
+              *> fichier : freservations en lecture
+              *> Recherche sur zone d'une réservation effectuée
+              *> avec le nom du pass
        RECHERCHE_RESERVATION_NOM.
               OPEN INPUT freservations 
               MOVE 0 TO Wfin
@@ -876,6 +893,8 @@ PROCEDURE DIVISION.
                 END-START
               CLOSE freservations.
 
+              *> fichier : freservations en lecture
+              *> Recherche direct sur l'id de réservation
        RECHERCHE_RESERVATION_ID.
                MOVE 0 TO Wtrouve
                OPEN INPUT freservations 
@@ -891,6 +910,8 @@ PROCEDURE DIVISION.
                PERFORM AFFICHER_RESERVATION
               CLOSE freservations.
 
+              *> fichier: freservations en lecture
+              *> Recherche sur zone d'une réservation avec l'année de l'édtion
        RECHERCHE_RESERVATION_EDITION.
               OPEN I-O freservations 
               MOVE 0 TO Wfin
@@ -916,6 +937,8 @@ PROCEDURE DIVISION.
                 END-START
               CLOSE freservations.
 
+              *> fichier: freservations en lecture 
+              *> Recherche sur zone d'un réservation avec le département
        RECHERCHE_RESERVATION_DEP.
               OPEN INPUT freservations 
               DISPLAY 'Indiquer le département : '
@@ -941,6 +964,7 @@ PROCEDURE DIVISION.
                 END-START
               CLOSE freservations.
 
+              *> Procédure permettant d'afficher le tampon frep_dateA
        AFFICHER_RESERVATION.
         DISPLAY 'Id de réservation  : ', fres_id 
         DISPLAY 'Pass               : ', fres_nomPa
@@ -953,6 +977,7 @@ PROCEDURE DIVISION.
         DISPLAY '_________________________________________'.
 
       *>Gestion des pass
+      *> Affichage du menu de gestion des pass
        GESTION_PASS.
       	PERFORM WITH TEST AFTER UNTIL choix=0 
          PERFORM WITH TEST AFTER UNTIL choix<9                 
@@ -972,6 +997,8 @@ PROCEDURE DIVISION.
        END-PERFORM
        END-PERFORM.
 
+       *> fichier : fpass en maj
+       *> Procédure d'ajout d'un pass à une édition
        AJOUTER_PASS.
        OPEN I-O fpass 
        MOVE 2000 TO fp_dateA
@@ -993,6 +1020,9 @@ PROCEDURE DIVISION.
          DISPLAY 'Impossible d''ajouter ce pass, il existe déjà.'
        CLOSE fpass.
 
+       *> fichier: fpass en maj
+       *> Procédure de génération des pass par défaut
+       *> Procédure surtout appelé lors de la création de l'édition
        GENERER_PASS.
         OPEN I-O fpass 
 
@@ -1047,13 +1077,15 @@ PROCEDURE DIVISION.
 
         CLOSE fpass.
 
-        VERIF_FORMAT_PRIX.
+        *> Procédure de vérification du prix des pass
+      VERIF_FORMAT_PRIX.
           PERFORM WITH TEST BEFORE UNTIL fp_prix > 0
           DISPLAY 'Veuillez saisir une valeur numérique : '
           WITH NO ADVANCING
           ACCEPT fp_prix
           END-PERFORM.
 
+          *> Menu de sélection de la recherche des pass
        RECHERCHER_PASS.
        PERFORM WITH TEST AFTER UNTIL choix=0 
         PERFORM WITH TEST AFTER UNTIL choix<9                 
@@ -1071,12 +1103,14 @@ PROCEDURE DIVISION.
         END-PERFORM
        END-PERFORM.
 
+       *> Demande de l'édition pour les pass
        RECHERCHE_PASS_EDITION.
        DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
        ACCEPT fp_dateA 
        PERFORM AFFICHER_PASS_EDITION.
        
-
+       *> fichier: feditions en lecture, fpass en lecture
+       *> Recherche sur zone des pass en fonction de l'édition
        AFFICHER_PASS_EDITION.
        MOVE 0 TO Wfin
        MOVE 0 TO Wtrouve
@@ -1111,6 +1145,8 @@ PROCEDURE DIVISION.
           DISPLAY 'Edition pas trouvée'
         END-IF.
 
+        *> fichier: fpass en lecture
+        *> Vérifie qu'un pass éxiste pour un tampon initialisé
         VERIF_PASS_ID.
         OPEN INPUT fpass 
         MOVE 0 TO Wfin
@@ -1123,6 +1159,9 @@ PROCEDURE DIVISION.
         END-READ
         CLOSE fpass.
 
+        *> fichier : fpass en maj
+        *> recherche direct d'un pass avec la clef
+        *> Et eventuellement modification de ce pass si désiré
        RECHERCHE_PASS_ID.
         OPEN I-O fpass 
         DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
@@ -1141,6 +1180,9 @@ PROCEDURE DIVISION.
          END-IF
          CLOSE fpass.
 
+         *> fichier : fpass en maj
+         *> Initialisation de la clef d'un pass 
+         *> redirection vers la procédure réécrire pass 
        MODIFIER_PASS.
         OPEN I-O fpass 
         DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
@@ -1154,10 +1196,11 @@ PROCEDURE DIVISION.
             PERFORM REECRIRE_PASS
        CLOSE fpass.
 
+       *> fichier : fpass en maj
+       *> Procédure de suppression d'un pass avec la clef initialisée
        SUPPRIMER_PASS_EDITION.
          OPEN I-O fpass
          MOVE 0 TO Wfin
-         MOVE 0 TO Wtrouve
          MOVE 0 TO Wtrouve
          OPEN INPUT fpass 
          MOVE fp_dateA TO dateA
@@ -2440,10 +2483,11 @@ PROCEDURE DIVISION.
        DISPLAY "Vous désirez créer un nouveau jeu de données."
        DISPLAY "Attention, cette action supprimera toutes les données de"
        DISPLAY "tous les fichiers et les remplacera par des nouvelles."
-       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017.
-       DSIPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
+       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017."
+
+       DISPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
        DISPLAY "Le jour 2 comprend 19 résas, soit une seule restante"
-       DISPLAY "Le jour 3, seulement une résa.
+       DISPLAY "Le jour 3, seulement une résa."
        DISPLAY "Etes-vous sur ? :"
        DISPLAY " 1 - Oui"
        DISPLAY " 2 - Non"       
