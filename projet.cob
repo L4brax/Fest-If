@@ -2199,6 +2199,10 @@ PROCEDURE DIVISION.
        DISPLAY "Vous désirez créer un nouveau jeu de données."
        DISPLAY "Attention, cette action supprimera toutes les données de"
        DISPLAY "tous les fichiers et les remplacera par des nouvelles."
+       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017.
+       DSIPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
+       DISPLAY "Le jour 2 comprend 19 résas, soit une seule restante"
+       DISPLAY "Le jour 3, seulement une résa.
        DISPLAY "Etes-vous sur ? :"
        DISPLAY " 1 - Oui"
        DISPLAY " 2 - Non"       
@@ -2213,6 +2217,7 @@ PROCEDURE DIVISION.
              OPEN OUTPUT feditions
              OPEN OUTPUT fpass
              OPEN OUTPUT freservations
+             OPEN OUTPUT fincrements
 
              MOVE "ScèneA" TO fs_nomSce
              MOVE 2015 TO fs_dateA
@@ -3107,8 +3112,12 @@ PROCEDURE DIVISION.
              MOVE "adresse@mail.com" TO fres_adresseEmail
              MOVE 0706050403 TO fres_numTel
              MOVE 01011990 TO fres_dateNaissance
-             WRITE fresTampon END-WRITE
+             WRITE fresTampon END-WRITE             
+              
+             MOVE 45 TO fi_idResa
+             WRITE finTampon END-WRITE
 
+             CLOSE fincrements
              CLOSE freservations
              CLOSE fpass
              CLOSE feditions
