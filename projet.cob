@@ -342,17 +342,17 @@ PROCEDURE DIVISION.
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
           ACCEPT choixMenu
            EVALUATE choixMenu
-             WHEN 1  DISPLAY AFFICHER_PROGRAMMATION 
-             WHEN 2  DISPLAY PERFORM AFFICHER_PASS_EDITION
-             WHEN 3  DISPLAY PERFORM AJOUTER_RESERVATION
+             WHEN 1   PERFORM AFFICHER_PROGRAMMATION 
+             WHEN 2   PERFORM AFFICHER_PASS_EDITION
+             WHEN 3   PERFORM AJOUTER_RESERVATION
              WHEN 4 PERFORM CONNEXION_USER
            END-EVALUATE
     
 
        IF Wconnect = 1 
       *> Menu gestionnaire 
-       PERFORM WITH TEST AFTER UNTIL choixMenu=0 
-         PERFORM WITH TEST AFTER UNTIL choixMenu<9   
+       PERFORM WITH TEST AFTER UNTIL choixMenu=0 OR Wconnect = 0
+         PERFORM WITH TEST AFTER UNTIL choixMenu<9  OR Wconnect = 0
               DISPLAY ' |   Connecté en tant que : ', fu_id   
 
               DISPLAY '  ___________* Menu gestionnaire *________'
@@ -364,7 +364,8 @@ PROCEDURE DIVISION.
               DISPLAY ' |Gestion des scènes          :          5|'
               DISPLAY ' |Gestion des éditions        :          6|'
               DISPLAY ' |Gestion des utilisateurs    :          7|'
-              DISPLAY ' |Reset du jeu de données     :          8|'
+              DISPLAY ' |Déconnexion                 :          8|'
+              DISPLAY ' |Reset du jeu de données     :          9|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choixMenu
@@ -376,7 +377,8 @@ PROCEDURE DIVISION.
                WHEN 5 PERFORM GESTION_SCENES
                WHEN 6 PERFORM GESTION_EDITIONS
                WHEN 7 PERFORM GESTION_USERS
-               WHEN 8 PERFORM RESET_DONNEES
+               WHEN 8 PERFORM DECONNEXION_USER
+               WHEN 9 PERFORM RESET_DONNEES
               END-EVALUATE
          END-PERFORM
        END-PERFORM
@@ -399,8 +401,8 @@ PROCEDURE DIVISION.
 
        *> Gestion des utilisateur 
         GESTION_USERS. 
-        PERFORM WITH TEST AFTER UNTIL WchoixCo=0 
-          PERFORM WITH TEST AFTER UNTIL WchoixCo<9     
+        PERFORM WITH TEST AFTER UNTIL WchoixCo=0 OR Wconnect = 0
+          PERFORM WITH TEST AFTER UNTIL WchoixCo<9 OR Wconnect = 0   
             IF Wconnect = 1
             DISPLAY ' |   Connecté en tant que : ', fu_id  
             END-IF                               
@@ -420,7 +422,7 @@ PROCEDURE DIVISION.
             EVALUATE WchoixCo
             WHEN 1 PERFORM CONNEXION_USER
             WHEN 2 PERFORM AJOUTER_USER
-            WHEN 3 PERFORM DECONNEXION 
+            WHEN 3 PERFORM DECONNEXION_USER 
             WHEN 4 PERFORM PASSWORD_USER
             END-EVALUATE
           END-PERFORM
@@ -443,7 +445,7 @@ PROCEDURE DIVISION.
         CONNEXION_USER. 
         IF Wconnect = 1 
          DISPLAY "Déconnection de l'utilisateur : " , fu_id
-         PERFORM DECONNEXION
+         PERFORM DECONNEXION_USER
         END-IF 
 
         OPEN I-O fusers 
@@ -462,16 +464,17 @@ PROCEDURE DIVISION.
          END-IF 
         ELSE 
          DISPLAY "Nom d'utilisateur inconnu"
+         CLOSE fusers
         END-IF.
 
-        DECONNEXION. 
+        DECONNEXION_USER. 
          MOVE 0 TO Wconnect
          MOVE 0 TO fu_ad
         CLOSE fusers.
 
         AJOUTER_USER. 
         IF Wconnect = 1 AND fu_ad =1
-         PERFORM DECONNEXION
+         PERFORM DECONNEXION_USER
          OPEN I-O fusers
          DISPLAY "Saisir votre nom d'utilisateur" 
          ACCEPT fu_id
@@ -1642,6 +1645,7 @@ PROCEDURE DIVISION.
         AFFICHER_PROGRAMMATION.
           OPEN INPUT frepresentations                     
           MOVE 1 TO Wcount   
+          PERFORM AFFICHAGE_ANNEES_EDITIONS
           DISPLAY 'Indiquer l''édition : '
           WITH NO ADVANCING
           ACCEPT frep_dateA 
@@ -2431,10 +2435,10 @@ PROCEDURE DIVISION.
        DISPLAY "Vous désirez créer un nouveau jeu de données."
        DISPLAY "Attention, cette action supprimera toutes les données de"
        DISPLAY "tous les fichiers et les remplacera par des nouvelles."
-       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017.
-       DSIPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
+       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017."
+       DISPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
        DISPLAY "Le jour 2 comprend 19 résas, soit une seule restante"
-       DISPLAY "Le jour 3, seulement une résa.
+       DISPLAY "Le jour 3, seulement une résa."
        DISPLAY "Etes-vous sur ? :"
        DISPLAY " 1 - Oui"
        DISPLAY " 2 - Non"       
