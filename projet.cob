@@ -353,7 +353,7 @@ PROCEDURE DIVISION.
           DISPLAY ' |Gestionnaire, se connecter  :          4|'
           DISPLAY ' |________________________________________|'
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
-          DISPLAY fe_dateA
+
           ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1 PERFORM AFFICHER_PROGRAMMATION 
@@ -2619,7 +2619,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Francis Cabrel" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2628,7 +2628,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Lady gaga" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2637,7 +2637,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Rolling Stones" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2646,7 +2646,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Jamiroquai" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2655,7 +2655,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Airbourne" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2664,7 +2664,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Lamb of god" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2673,7 +2673,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Justin Bieber" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 1 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2682,7 +2682,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Gorgoroth" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2691,7 +2691,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Foo Fighters" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2700,7 +2700,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Nirvana" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 26 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2709,7 +2709,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Casimir" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 1 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2718,7 +2718,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Black Keys" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 32 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2727,7 +2727,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Noisebends" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2736,7 +2736,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Soviet Suprem" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 25 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2745,7 +2745,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Queens of the Stone Age" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 56 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2754,7 +2754,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Zuchero" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2763,7 +2763,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Meshuggah" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2772,7 +2772,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Francis Cabrel" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 49 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2802,7 +2802,7 @@ PROCEDURE DIVISION.
              MOVE 12000 TO fe_Ca
              WRITE fedTampon END-WRITE
 
-             MOVE 2015 TO fe_dateA
+             MOVE 2017 TO fe_dateA
              MOVE 30 TO fe_capacite
              MOVE 6 TO fe_nbArtiste
              MOVE 0 TO fe_nbResaJourUn
