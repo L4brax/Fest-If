@@ -118,9 +118,9 @@ FILE SECTION.
         FD frepresentations.
         01 frepTampon.
           02 frep_cleRep. 
-            03 frep_jour  PIC S9(2).
-            03 frep_heureDebut PIC S9(4).
-            03 frep_dateA PIC S9(4).
+            03 frep_jour  PIC 9(2).
+            03 frep_heureDebut PIC 9(4).
+            03 frep_dateA PIC 9(4).
             03 frep_nomSce PIC A(30).
           02 frep_nomGr PIC A(30).
           02 frep_cachet PIC S9(6).
@@ -129,9 +129,9 @@ FILE SECTION.
         FD frepresentationsTemp.
         01 frepTamponTemp.
           02 frep_cleRepT. 
-            03 frep_jourT  PIC S9(2).
-            03 frep_heureDebutT PIC S9(4).
-            03 frep_dateAT PIC S9(4).
+            03 frep_jourT  PIC 9(2).
+            03 frep_heureDebutT PIC 9(4).
+            03 frep_dateAT PIC 9(4).
             03 frep_nomSceT PIC A(30).
           02 frep_nomGrT PIC A(30).
           02 frep_cachetT PIC S9(9).
@@ -141,17 +141,18 @@ FILE SECTION.
          01 fedTampon. 
           02 fe_dateA PIC 9(4). 
           02 fe_capacite PIC 9(6).
-          02 fe_nbJour PIC 9(2). 
           02 fe_NbScene PIC 9(2).
           02 fe_nbArtiste PIC 9(3).
           02 fe_nbResaJourUn PIC 9(4).
           02 fe_nbResaJourDeux PIC 9(4). 
           02 fe_nbResaJourTrois PIC 9(4). 
-          02 fe_Ca PIC S9(30). 
+          02 fe_resultat PIC S9(30). 
           02 fe_coutScenes PIC 9(30). 
-          02 fe_coutArtistes PIC 9(30). 
-          02 fe_nbRepresentation PIC 9(2).
-                  
+          02 fe_coutArtistes PIC 9(30).
+          02 fe_nbRepresentations PIC 9(2).       
+          02 fe_Ca PIC S9(30).                  
+
+
 WORKING-STORAGE SECTION.
       *> Déclarations des zones de compte rendu  
         77 fs_stat PIC 9(2). 
@@ -188,6 +189,12 @@ WORKING-STORAGE SECTION.
         77 posFin PIC 9.
         77 nomDernier PIC A(30).
         77 styleDernier PIC A(30).
+        77 choixModifReserv PIC 9(2).
+
+    	*>Variable scenes
+      *>Variables editions
+        77 WdateA PIC 9999.
+        77 Wresultat PIC 9(9).
         77 WchoixModifReserv PIC 9(2).
         77 Wjour      PIC 9.
         77 minutes PIC S9(2).
@@ -199,10 +206,9 @@ WORKING-STORAGE SECTION.
         77 WnbScene PIC 9(2).
         77 WCouTemp PIC 9(30).
 
-
       *> SUPPRIMER_SCENE
         77 WrepSc PIC 9(1).
-        *>AJOUT_SCENES 
+      *>AJOUT_SCENES 
         77 WnomSc PIC A(4).
       *> MODIFIER_SCENE
         77 Wprog PIC 9(1).
@@ -292,6 +298,7 @@ PROCEDURE DIVISION.
               DISPLAY ' |Gestion des représentations :          4|'
               DISPLAY ' |Gestion des scènes          :          5|'
               DISPLAY ' |Gestion des éditions        :          6|'
+              DISPLAY ' |Reset du jeu de données     :          7|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choixMenu
@@ -302,6 +309,7 @@ PROCEDURE DIVISION.
                WHEN 4 PERFORM GESTION_REPRESENTATIONS
                WHEN 5 PERFORM GESTION_SCENES
                WHEN 6 PERFORM GESTION_EDITIONS
+               WHEN 7 PERFORM RESET_DONNEES
               END-EVALUATE
          END-PERFORM
        END-PERFORM
@@ -339,7 +347,7 @@ PROCEDURE DIVISION.
                *>DISPLAY "Resa : ",fi_idResa
                 WRITE finTampon
                 END-WRITE
-               	CLOSE fincrements
+                CLOSE fincrements
 
               READ freservations
               MOVE 01 TO j
@@ -362,11 +370,13 @@ PROCEDURE DIVISION.
               WITH NO ADVANCING
               ACCEPT fres_dateA
               MOVE fres_dateA TO fp_dateA
+              DISPLAY "_____________* Liste des pass *______________"
               PERFORM AFFICHER_PASS_EDITION
               IF Wtrouve = 1 THEN
                 MOVE fres_dateA TO fe_dateA
                 PERFORM WITH TEST AFTER UNTIL Wtrouve = 1 AND Wallowed = 1
-                  DISPLAY 'Quel pass voulez vous acheter? '
+                  DISPLAY 'Indiquer le numéro de pass : '
+                  WITH NO ADVANCING
                   ACCEPT fres_nomPa
                   MOVE fres_nomPa TO fp_nomPa
                   PERFORM VERIF_PASS_ID
@@ -376,45 +386,52 @@ PROCEDURE DIVISION.
                     'séléctionné'
                 END-PERFORM
 
-                DISPLAY 'Quel est le prénom du participant?'
+                DISPLAY 'Indiquer le prénom du participant : '
+                WITH NO ADVANCING
                 ACCEPT fres_prenom
-                DISPLAY 'Quelle est son département de résidence?'
+                DISPLAY 'Indiquer son département de résidence : '
+                WITH NO ADVANCING
                 ACCEPT fres_dep
               
-  	            PERFORM WITH TEST AFTER UNTIL j>00 AND j<=31 
-  	              DISPLAY 'Quel est son jour de naissance?'
-  	              ACCEPT j
-  	            END-PERFORM
+                PERFORM WITH TEST AFTER UNTIL j>00 AND j<=31 
+                  DISPLAY 'Indiquer son jour de naissance : '
+                  WITH NO ADVANCING
+                  ACCEPT j
+                END-PERFORM
 
-  	            PERFORM WITH TEST AFTER UNTIL m>00 AND m<=12 
-  	              DISPLAY 'Quel est son mois de naissance?'
-  	              ACCEPT m
-  	            END-PERFORM
+                PERFORM WITH TEST AFTER UNTIL m>00 AND m<=12 
+                  DISPLAY 'Indiquer son mois de naissance : '
+                  WITH NO ADVANCING
+                  ACCEPT m
+                END-PERFORM
 
-  	            PERFORM WITH TEST AFTER UNTIL y>1800 AND y<=2016 
-  	              DISPLAY 'Quel est son année de naissance?'
-  	              ACCEPT y
-  	            END-PERFORM
+                PERFORM WITH TEST AFTER UNTIL y>1800 AND y<=2016 
+                  DISPLAY 'Indiquer son année de naissance : '
+                  WITH NO ADVANCING
+                  ACCEPT y
+                END-PERFORM
                 STRING j m y INTO fres_dateNaissance
 
                 PERFORM WITH TEST AFTER UNTIL Wcount > 0
                   MOVE 0 TO Wcount
-                  DISPLAY 'Quel est son adresse e-mail?'
+                  DISPLAY 'Indiquer son adresse e-mail : '
+                  WITH NO ADVANCING
                   ACCEPT fres_adresseEmail
                   INSPECT fres_adresseEmail TALLYING Wcount FOR CHARACTERS  AFTER INITIAL '@'
                 END-PERFORM
-  	            
+                
                 PERFORM WITH TEST AFTER UNTIL Wcount = 0
                   MOVE 0 TO Wcount
-  	              DISPLAY 'Quel est son numéro de téléphone?'
-  	              ACCEPT fres_numTel
+                  DISPLAY 'Indiquer son numéro de téléphone : '
+                  WITH NO ADVANCING
+                  ACCEPT fres_numTel
                   INSPECT fres_numTel TALLYING Wcount FOR ALL SPACES
                 END-PERFORM
                 MOVE fres_dateA TO fe_dateA 
-  	            WRITE fresTampon 
+                WRITE fresTampon 
                 NOT INVALID KEY
                   PERFORM MAJ_NBRESERVATION
-                  DISPLAY 'labite'
+                  DISPLAY "___________________________________________"
                 END-WRITE
               END-IF
               CLOSE freservations.
@@ -451,13 +468,14 @@ PROCEDURE DIVISION.
                  END-PERFORM
               END-PERFORM.
 
-       MODIFIER_RESERVATION_NOM.
+      MODIFIER_RESERVATION_NOM.
               OPEN I-O freservations 
                READ freservations
                INVALID KEY 
                DISPLAY "Erreur: le tampon a été altéré."
                NOT INVALID KEY
-                DISPLAY 'Quelle est le nom?'
+                DISPLAY 'Indiquer le nouveau nom : '
+                WITH NO ADVANCING
                 ACCEPT fres_prenom
                 REWRITE fresTampon
                INVALID KEY
@@ -466,6 +484,7 @@ PROCEDURE DIVISION.
                  DISPLAY "Reservation modifiée"
                END-REWRITE
               CLOSE freservations.
+
        MODIFIER_RESERVATION_MAIL.
               OPEN I-O freservations 
                READ freservations
@@ -474,7 +493,7 @@ PROCEDURE DIVISION.
                NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL Wcount > 0
                   MOVE 0 TO Wcount
-                  DISPLAY 'Quel est la nouvelle adresse e-mail?'
+                  DISPLAY 'Indiquer le nouvel e-mail :' WITH NO ADVANCING
                   ACCEPT fres_adresseEmail
                   INSPECT fres_adresseEmail TALLYING Wcount FOR CHARACTERS  AFTER INITIAL '@'
                 END-PERFORM
@@ -494,7 +513,7 @@ PROCEDURE DIVISION.
                NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL Wcount = 0
                   MOVE 0 TO Wcount
-                  DISPLAY 'Quel est son numéro de téléphone?'
+                  DISPLAY 'Indiquer le nouveau numéro de téléphone : '
                   ACCEPT fres_numTel
                   INSPECT fres_numTel TALLYING Wcount FOR ALL SPACES
                 END-PERFORM
@@ -606,13 +625,20 @@ PROCEDURE DIVISION.
        RECHERCHE_RESERVATION_NOM.
               OPEN INPUT freservations 
               MOVE 0 TO Wfin
-              PERFORM RECHERCHE_PASS_EDITION
-              DISPLAY 'Pour quel pass voulez vous afficher les participant?'
+              DISPLAY 'Voulez-vous afficher les pass d''une édition avant de faire votre recherche?'
+              DISPLAY '1 pour oui, 0 pour non :'
+              WITH NO ADVANCING
+              ACCEPT choix 
+              IF choix = 1 THEN
+                PERFORM RECHERCHE_PASS_EDITION
+              END-IF
+              DISPLAY 'Indiquer le numéro du pass : '
+              WITH NO ADVANCING
               ACCEPT fres_nomPa 
               MOVE fres_nomPa TO nomPa
               START freservations, KEY = fres_nomPa
                 INVALID KEY 
-                     DISPLAY "Il n'y a aucune réservation à ce nom."
+                     DISPLAY "Il n'y a aucune réservation à ce pass."
                 NOT INVALID KEY
                   PERFORM WITH TEST AFTER UNTIL  Wfin = 1
                      READ freservations NEXT RECORD
@@ -633,20 +659,23 @@ PROCEDURE DIVISION.
        RECHERCHE_RESERVATION_ID.
                MOVE 0 TO Wtrouve
                OPEN INPUT freservations 
-               DISPLAY 'Quel est l''id du participant?'
+               DISPLAY 'Indiquer l''id du participant : '
+               WITH NO ADVANCING
                ACCEPT fres_id 
                READ freservations
                INVALID KEY 
                DISPLAY "Il n'y a aucune réservation à cet id."
                NOT INVALID KEY
                MOVE 1 TO Wtrouve
+               DISPLAY '  _____________* Réservation *_____________'
                PERFORM AFFICHER_RESERVATION
               CLOSE freservations.
 
        RECHERCHE_RESERVATION_EDITION.
               OPEN I-O freservations 
               MOVE 0 TO Wfin
-              DISPLAY 'Quelle édition voulez vous rechercher?'
+              DISPLAY 'Indiquer l''édition : '
+              WITH NO ADVANCING
               ACCEPT fres_dateA 
               MOVE fres_dateA  TO dateA
               START freservations, KEY = fres_dateA
@@ -669,7 +698,8 @@ PROCEDURE DIVISION.
 
        RECHERCHE_RESERVATION_DEP.
               OPEN INPUT freservations 
-              DISPLAY 'Quelle département voulez vous rechercher?'
+              DISPLAY 'Indiquer le département : '
+              WITH NO ADVANCING
               MOVE 0 TO Wfin
               ACCEPT fres_dep  
               MOVE fres_dep   TO dep
@@ -692,7 +722,6 @@ PROCEDURE DIVISION.
               CLOSE freservations.
 
        AFFICHER_RESERVATION.
-        DISPLAY '_________________________________________'
         DISPLAY 'Id de réservation  : ', fres_id 
         DISPLAY 'Pass               : ', fres_nomPa
         DISPLAY 'Prénom             : ', fres_prenom
@@ -727,14 +756,17 @@ PROCEDURE DIVISION.
        OPEN I-O fpass 
        MOVE 2000 TO fp_dateA
        PERFORM WITH TEST AFTER UNTIL fp_dateA>1999
-        DISPLAY 'Pour quelle édition voulez vous ajouter un pass?'
+         DISPLAY 'Indiquer l''édition désirée : '
+         WITH NO ADVANCING
          ACCEPT fp_dateA
        END-PERFORM
-       DISPLAY 'Quelle est le nom du pass?'
+       DISPLAY 'Indiquer le nom du pass : '
+       WITH NO ADVANCING
        ACCEPT fp_nomPa
        READ fpass
        INVALID KEY
-         DISPLAY 'Quel prix donnez vous au pass?'
+         DISPLAY 'Indique le prix : '
+         WITH NO ADVANCING
          ACCEPT fp_prix
          WRITE fpassTampon END-WRITE
        NOT INVALID KEY
@@ -744,43 +776,50 @@ PROCEDURE DIVISION.
        GENERER_PASS.
         OPEN I-O fpass 
 
-        DISPLAY 'Quel prix donnez vous au pass premier jour?'
+        DISPLAY 'Indiquer le prix du pass premier jour : '
+        WITH NO ADVANCING
         MOVE 1 TO fp_nomPa
         ACCEPT fp_prix
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass deuxième jour?'
+        DISPLAY 'Indiquer le prix du pass deuxième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 2 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass troisième jour?'
+        DISPLAY 'Indiquer le prix du pass troisième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 3 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass premier et deuxième jour?'
+        DISPLAY 'Indiquer le prix du pass premier et deuxième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 12 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass deuxième et troisième jour?'
+        DISPLAY 'Indiquer le prix du pass deuxième et troisième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 23 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass premier et troisième jour?'
+        DISPLAY 'Indiquer le prix du pass premier et troisième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 13 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass trois jours?'
+        DISPLAY 'Indiquer le prix du pass trois jours : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 123 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
@@ -790,7 +829,8 @@ PROCEDURE DIVISION.
 
         VERIF_FORMAT_PRIX.
           PERFORM WITH TEST BEFORE UNTIL fp_prix > 0
-          DISPLAY 'Veuillez saisir une valeur numérique'
+          DISPLAY 'Veuillez saisir une valeur numérique : '
+          WITH NO ADVANCING
           ACCEPT fp_prix
           END-PERFORM.
 
@@ -812,7 +852,7 @@ PROCEDURE DIVISION.
        END-PERFORM.
 
        RECHERCHE_PASS_EDITION.
-       DISPLAY 'Quel est l''édition?'
+       DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
        ACCEPT fp_dateA 
        PERFORM AFFICHER_PASS_EDITION.
        
@@ -859,16 +899,15 @@ PROCEDURE DIVISION.
          INVALID KEY 
               DISPLAY "Ce pass n'est pas valide"
          NOT INVALID KEY
-         	  DISPLAY "Pass correcte"
          	  MOVE 1 TO Wtrouve
         END-READ
         CLOSE fpass.
 
        RECHERCHE_PASS_ID.
         OPEN I-O fpass 
-        DISPLAY 'Quelle édition voulez vous rechercher un pass?'
+        DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
         ACCEPT fp_dateA
-        DISPLAY 'Quelle est le nom du pass?'
+        DISPLAY 'Indiquer le nom du pass : 'WITH NO ADVANCING
         ACCEPT fp_nomPa
         READ fpass
         INVALID KEY 
@@ -884,9 +923,9 @@ PROCEDURE DIVISION.
 
        MODIFIER_PASS.
         OPEN I-O fpass 
-        DISPLAY 'Quelle édition voulez vous rechercher un pass?'
+        DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
         ACCEPT fp_dateA
-        DISPLAY 'Quelle est le nom du pass?'
+        DISPLAY 'Indiquer le nom du pass : 'WITH NO ADVANCING
         ACCEPT fp_nomPa
         READ fpass
         INVALID KEY 
@@ -924,18 +963,21 @@ PROCEDURE DIVISION.
           CLOSE fpass.
 
        REECRIRE_PASS.
-        PERFORM CHOIX_MODIF_PASS
+        PERFORM choix_MODIF_PASS
             EVALUATE choix
               WHEN 1 
                 DELETE fpass
-                DISPLAY 'Quelle est le nouveau nom du pass?'
+                DISPLAY 'Indiquer le nouveau nom : '
+                WITH NO ADVANCING
                 ACCEPT fp_nomPa
               WHEN 2 
                 DELETE fpass
-                DISPLAY 'Quelle est la nouvelle édition?'
+                DISPLAY 'Indiquer la nouvelle édition : '
+                WITH NO ADVANCING
                 ACCEPT fp_dateA
               WHEN 3 
-                DISPLAY 'Quelle est le nouveau prix?'
+                DISPLAY 'Indiquer le nouveau prix : '
+                WITH NO ADVANCING
                 ACCEPT Wprix
                 MOVE fp_dateA TO fe_dateA
                 PERFORM MAJ_PRIX_PASS_EDITION
@@ -993,7 +1035,6 @@ PROCEDURE DIVISION.
 
 
        AFFICHER_PASS.
-        DISPLAY '_________________________________________'
         DISPLAY 'Nom                : ', fp_nomPa
         DISPLAY 'Edition            : ', fp_dateA 
         DISPLAY 'Prix               : ', fp_prix
@@ -1017,14 +1058,14 @@ PROCEDURE DIVISION.
        GESTION_GROUPES.
         PERFORM WITH TEST AFTER UNTIL choix=0
          PERFORM WITH TEST AFTER UNTIL choix<5                 
-              DISPLAY '  _______* Menu gestion des groupes *_____'
-              DISPLAY ' |Revenir au menu principal :            0| '
-              DISPLAY ' |Ajouter un groupe         :            1|'
-              DISPLAY ' |Afficher les groupes      :            2|'
-              DISPLAY ' |Supprimer un groupe       :            3|'
-              DISPLAY ' |Modifier un groupe        :            4|'
+              DISPLAY '  ____* Menu de gestion des groupes *_____'
+              DISPLAY ' |Revenir au menu principal            : 0| '
+              DISPLAY ' |Ajouter un groupe                    : 1|'
+              DISPLAY ' |Afficher les groupes                 : 2|'
+              DISPLAY ' |Supprimer un groupe                  : 3|'
+              DISPLAY ' |Modifier un groupe                   : 4|'
               DISPLAY ' |Afficher le nombre de groupe/edition : 5|'
-              DISPLAY ' |Evolution deux années successives :    6|'
+              DISPLAY ' |Evolution deux années successives    : 6|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
@@ -1042,27 +1083,30 @@ PROCEDURE DIVISION.
               
        AJOUTER_GROUPE.
               MOVE 'n' to quitter
+              DISPLAY "____________* Nouveau groupe *__________"
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 0 AND nomGr IS NOT = ' '
-                    DISPLAY 'Nom du groupe ?'
-                        ACCEPT nomGr
-                         IF nomGr = ' ' THEN
-                      DISPLAY 'Le nom ne peut être vide !!'
-                        ELSE
-                        PERFORM VERIF_NOM_GROUPE
-                        END-IF
-                        IF Wtrouve = 1 THEN
-                         DISPLAY 'le groupe existe dèjà !!'
-                         DISPLAY 'voulez-vous quitter ? (n/o)'
-                          ACCEPT quitter
-                          IF quitter = 'o' THEN 
-                            MOVE 0 TO Wtrouve
-                          END-IF
-                        END-IF
+                    DISPLAY 'Indiquer le nom du groupe : '
+                    WITH NO ADVANCING
+                ACCEPT nomGr
+                  IF nomGr = ' ' THEN
+                  DISPLAY 'Le nom ne peut être vide !!'
+                  ELSE
+                  PERFORM VERIF_NOM_GROUPE
+                END-IF
+                IF Wtrouve = 1 THEN
+                  DISPLAY 'le groupe existe dèjà !!'
+                  DISPLAY 'voulez-vous quitter ? (n/o)'
+                  ACCEPT quitter
+                  IF quitter = 'o' THEN 
+                    MOVE 0 TO Wtrouve
+                  END-IF
+                END-IF
               END-PERFORM
               IF quitter = 'n' THEN
               MOVE nomGr TO fg_nom
               PERFORM WITH TEST AFTER UNTIL fg_style IS NOT = ' '
-              DISPLAY 'Style du groupe ?'
+              DISPLAY 'Indiquer le style du groupe : '
+              WITH NO ADVANCING
               ACCEPT fg_style
               END-PERFORM
               OPEN EXTEND fgroupes
@@ -1077,11 +1121,10 @@ PROCEDURE DIVISION.
               PERFORM WITH TEST AFTER UNTIL Wfin = 1 OR Wtrouve = 1
               READ fgroupes
                 AT END MOVE 1 TO Wfin
-                     DISPLAY 'Groupe inexistant'
+                     
                 NOT AT END
                 IF fg_nom = nomGr THEN
                       MOVE 1 TO Wtrouve
-                     DISPLAY 'Groupe trouvé'      
                 END-IF
               END-READ
               END-PERFORM
@@ -1090,20 +1133,23 @@ PROCEDURE DIVISION.
         AFFICHER_GROUPES.
               OPEN INPUT fgroupes
               MOVE 0 TO Wfin
+              DISPLAY '|____________________* Affichage des groupes  *_______________|'
+              DISPLAY '|Groupe                        |Style                         |'
               PERFORM WITH TEST AFTER UNTIL Wfin = 1
               READ fgroupes
                 AT END MOVE 1 TO Wfin
-                  DISPLAY 'fin'
                 NOT AT END
-                  DISPLAY 'Nom : ',fg_nom,'Style : ',fg_style
+                  DISPLAY '|',fg_nom,'|',fg_style,'|'
               END-READ
               END-PERFORM
+              DISPLAY '|______________________________|______________________________|'
               CLOSE fgroupes.
 
        SUPPRIMER_GROUPE.
               OPEN INPUT fgroupes
               OPEN OUTPUT fgroupesTemp
-              DISPLAY 'Nom du groupe ?'
+              DISPLAY 'Indiquer le nom du groupe : '
+              WITH NO ADVANCING
               ACCEPT nomGr
               MOVE 0 TO Wfin
               PERFORM WITH TEST AFTER UNTIL Wfin = 1
@@ -1136,7 +1182,8 @@ PROCEDURE DIVISION.
 
        MODIFIER_GROUPE.
               OPEN INPUT fgroupes
-              DISPLAY 'Nom du groupe ?'
+              DISPLAY 'Indiquer le nom du groupe : '
+              WITH NO ADVANCING
               ACCEPT nomGr
               MOVE 0 TO Wfin
               MOVE 0 TO pos
@@ -1157,17 +1204,22 @@ PROCEDURE DIVISION.
                 OPEN I-O fgroupes
                 MOVE 0 to choixMenu
               PERFORM WITH TEST AFTER UNTIL choixMenu>0 OR choixMenu<=2                 
-                DISPLAY 'Que voulez-vous modifier ?'
-                DISPLAY '1- Le nom'
-                DISPLAY '2- Le style'
+                DISPLAY '  _______* Modification des groupes *_____'
+                DISPLAY ' |Annuler             :                  0|'
+                DISPLAY ' |Modifier le nom     :                  1|'
+                DISPLAY ' |Modifier le style   :                  2|'
+                DISPLAY ' |________________________________________|'
+                DISPLAY 'Faites un choix : ' WITH NO ADVANCING  
               ACCEPT choixMenu
               EVALUATE choixMenu
               WHEN 1 
-                DISPLAY 'Nouveau nom = '
+                DISPLAY 'Indiquer le nouveau nom : '
+                WITH NO ADVANCING 
                 ACCEPT nomGr
                 MOVE fg_style to styleGr
               WHEN 2 
-                DISPLAY 'Nouveau style = '
+                DISPLAY 'Indiquer le nouveau style : '
+                WITH NO ADVANCING 
                 ACCEPT styleGr
                 MOVE fg_nom to nomGr
               END-EVALUATE
@@ -1185,24 +1237,24 @@ PROCEDURE DIVISION.
               DISPLAY 'groupe modifié'
               CLOSE fgroupes
               ELSE
-                DISPLAY 'le groupe n existe pas'
+                DISPLAY 'le groupe n''existe pas'
               END-IF.
       *>Gestion des représentations
        GESTION_REPRESENTATIONS.
               PERFORM WITH TEST AFTER UNTIL choix=0
          PERFORM WITH TEST AFTER UNTIL choix<5                 
-              DISPLAY '  __* Menu gestion des représentation *___'
-              DISPLAY ' |Revenir au menu principal :            0| '
-              DISPLAY ' |Ajouter une nouvelle représentation :  1|'
-              DISPLAY ' |Afficher les représentations par année:2|'
-              DISPLAY ' |Supprimer une représentation :         3|'
-              DISPLAY ' |Modifier  une représentation :         4|'
+              DISPLAY '  _* Menu de gestion des représentation *_'
+              DISPLAY ' |Revenir au menu principal            : 0| '
+              DISPLAY ' |Ajouter une nouvelle représentation  : 1|'
+              DISPLAY ' |Afficher la programmation            : 2|'
+              DISPLAY ' |Supprimer une représentation         : 3|'
+              DISPLAY ' |Modifier  une représentation         : 4|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
               EVALUATE choix
               WHEN 1 PERFORM AJOUTER_NOUVELLE_REPRESENTATION
-              WHEN 2 PERFORM AFFICHER_REPRESENTATION
+              WHEN 2 PERFORM AFFICHER_PROGRAMMATION
               WHEN 3 PERFORM SUPPRIMER_REPRESENTATION
               WHEN 4 PERFORM MODIFIER_REPRESENTATION
        END-EVALUATE
@@ -1210,41 +1262,43 @@ PROCEDURE DIVISION.
        END-PERFORM.
 
        AJOUTER_NOUVELLE_REPRESENTATION.
-              OPEN I-O frepresentations
-              MOVE 0 TO Wtrouve
-            PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-              DISPLAY 'Année ?'
-              ACCEPT fe_dateA
-              OPEN I-O feditions 
-                PERFORM VERIF_EDITION
-            END-PERFORM
-            MOVE 0 TO Wtrouve
-              PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-              PERFORM AFFICHER_GROUPES
-                DISPLAY 'Indiquer le nom du groupe : '
-                WITH NO ADVANCING
-                ACCEPT nomGr
-              PERFORM VERIF_NOM_GROUPE
-              END-PERFORM
-              MOVE nomGr TO frep_nomGr
-            MOVE fe_dateA to frep_dateA
+        DISPLAY "____________* Nouvelle représentation *__________"
+        OPEN I-O frepresentations
+        MOVE 0 TO Wtrouve
+        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+        DISPLAY 'Indiquer l''édition de la représentation : '
+        WITH NO ADVANCING
+        ACCEPT fe_dateA
+        OPEN I-O feditions 
+          PERFORM VERIF_EDITION
+        END-PERFORM
+        MOVE 0 TO Wtrouve
+          PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+          PERFORM AFFICHER_GROUPES
+            DISPLAY 'Indiquer le nom du groupe : '
+            WITH NO ADVANCING
+            ACCEPT nomGr
+          PERFORM VERIF_NOM_GROUPE
+          END-PERFORM
+          MOVE nomGr TO frep_nomGr
+        MOVE fe_dateA to frep_dateA
 
-              PERFORM WITH TEST AFTER UNTIL frep_jour <= 3 AND frep_jour > 0
-                DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
-                WITH NO ADVANCING
-                ACCEPT frep_jour
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL dispoGr = 0
-              PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
-                DISPLAY 'Indiquer l''heure de début (HH) : '
-                WITH NO ADVANCING
-                ACCEPT frep_heureDebut
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
-                DISPLAY 'et les minutes (MM) : '
-                WITH NO ADVANCING
-                ACCEPT minutes
-              END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL frep_jour <= 3 AND frep_jour > 0
+          DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
+          WITH NO ADVANCING
+          ACCEPT frep_jour
+        END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL dispoGr = 0
+        PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
+          DISPLAY 'Indiquer l''heure de début (HH) : '
+          WITH NO ADVANCING
+          ACCEPT frep_heureDebut
+        END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
+          DISPLAY 'et les minutes (MM) : '
+          WITH NO ADVANCING
+          ACCEPT minutes
+        END-PERFORM
               COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
               MOVE frep_heureDebut TO heureRep
               MOVE frep_jour TO jourRep
@@ -1273,14 +1327,12 @@ PROCEDURE DIVISION.
                END-READ 
               CLOSE fscenes
               END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
-                DISPLAY 'Cachet artiste : '
-                WITH NO ADVANCING
-                ACCEPT frep_cachet
-              END-PERFORM
-              OPEN INPUT fscenes
-
-              Close fscenes
+               PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
+          DISPLAY 'Indiquer le cachet de l''artiste : '
+          WITH NO ADVANCING
+          ACCEPT frep_cachet
+        END-PERFORM
+        
               PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax <= fs_capacite
                 DISPLAY 'Nombre de personne max : '
                 WITH NO ADVANCING
@@ -1288,134 +1340,132 @@ PROCEDURE DIVISION.
               END-PERFORM
               WRITE frepTampon 
                 INVALID KEY
-                DISPLAY 'erreur interne  ******'
+                 DISPLAY 'erreur interne  ******'
                *> Si on a bien ajouté la représentation 
                *> on met à jour l'édition  
                 NOT INVALID KEY
                 DISPLAY 'représentation ajoutée'
                 READ feditions
-                INVALID KEY DISPLAY "Erreur lors du chargement de l'édition"
-                     
-                NOT INVALID KEY 
-                  *> Incrémentation du nombre de représentation 
-                  ADD 1 TO fe_nbRepresentation END-ADD 
-                  ADD frep_cachet TO fe_coutArtistes END-ADD
-                  REWRITE fedTampon 
-                    INVALID KEY DISPLAY "Erreur de mise à jour de l'édition"
-                    NOT INVALID KEY DISPLAY "Mise à jour de l'édition effectuée"
-                  END-REWRITE
-                END-READ
-                    *> Incrémentation du nombre d'artiste
+                  INVALID KEY DISPLAY "Erreur lors du chargement de l'édition"
+                       
+                  NOT INVALID KEY 
+                    *> Incrémentation du nombre de représentation 
+                    ADD 1 TO fe_nbRepresentations END-ADD 
+                    ADD frep_cachet TO fe_coutArtistes END-ADD
+                    REWRITE fedTampon 
+                      INVALID KEY DISPLAY "Erreur de mise à jour de l'édition"
+                      NOT INVALID KEY DISPLAY "Mise à jour de l'édition effectuée"
+                    END-REWRITE
+                  END-READ
+                      *> Incrémentation du nombre d'artiste
 
-                START frepresentations,
-                      KEY = frep_nomGr
-                      INVALID KEY
-                      READ feditions
-                        NOT INVALID KEY
-                          COMPUTE fe_nbArtiste = fe_nbArtiste + 1
-                          REWRITE fedTampon 
-                      END-READ
-                  END-START
-
-                CLOSE feditions
-
+                  START frepresentations,
+                        KEY = frep_nomGr
+                        INVALID KEY
+                        READ feditions
+                          NOT INVALID KEY
+                            COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                            REWRITE fedTampon 
+                        END-READ
+                    END-START
               END-WRITE
+              CLOSE feditions
               CLOSE frepresentations.
 
 
         AFFICHER_REPRESENTATION.
-        MOVE 0 to Wfin
-              OPEN INPUT frepresentations                        
-                DISPLAY 'Année de l édition ?'
-                ACCEPT frep_dateA 
-                START frepresentations,
-                KEY = frep_dateA
-                  INVALID KEY
-                    DISPLAY 'Pas d édition cette année'
-                    MOVE 1 TO Wfin
-                  NOT INVALID KEY
-                PERFORM WITH TEST AFTER UNTIL Wfin = 1
-                  READ frepresentations NEXT RECORD
-                  AT END
-                    DISPLAY "C'est tout!"
-                    MOVE 1 TO Wfin
-                  NOT AT END
-                    DISPLAY 'Le groupe ',frep_nomGr,'joue sur 'frep_nomSce,'le ',frep_jour,' à ',frep_heureDebut
-                  END-READ
-                END-PERFORM
-                 END-START
-                CLOSE frepresentations.
+          MOVE 0 to Wfin
+          OPEN INPUT frepresentations                        
+          DISPLAY 'Indiquer l''année de représentation : '
+          WITH NO ADVANCING
+          ACCEPT frep_dateA 
+          START frepresentations,
+          KEY = frep_dateA
+            INVALID KEY
+              DISPLAY 'Pas d''édition cette année'
+              MOVE 1 TO Wfin
+            NOT INVALID KEY
+          PERFORM WITH TEST AFTER UNTIL Wfin = 1
+            READ frepresentations NEXT RECORD
+            AT END
+              MOVE 1 TO Wfin
+            NOT AT END
+              DISPLAY 'Le groupe ',frep_nomGr,' joue sur ', frep_nomSce,'le ',frep_jour,' à ',frep_heureDebut
+            END-READ
+          END-PERFORM
+           END-START
+          CLOSE frepresentations.
 
         VERIF_DISPO_GROUPE.
-        MOVE 0 TO dispoGr                       
-                START frepresentations,
-                KEY = frep_nomGr
-                  INVALID KEY
-                    DISPLAY 'Pas de représentation pour ce groupe'
-                    MOVE 1 TO Wfin
-                  NOT INVALID KEY
-                PERFORM WITH TEST AFTER UNTIL Wfin = 1
-                  READ frepresentations NEXT RECORD
-                  AT END
-                    MOVE 1 TO Wfin
-                  NOT AT END
-                    IF frep_jour = jourRep THEN
-                      IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
-                      DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
-                      MOVE 1 TO dispoGr
-                      END-IF
-                    END-IF
-                  END-READ
-                END-PERFORM
-                 END-START.
+          MOVE 0 TO dispoGr                       
+          START frepresentations,
+          KEY = frep_nomGr
+            INVALID KEY
+              DISPLAY 'Pas de représentation pour ce groupe'
+              MOVE 1 TO Wfin
+            NOT INVALID KEY
+          PERFORM WITH TEST AFTER UNTIL Wfin = 1
+            READ frepresentations NEXT RECORD
+            AT END
+              MOVE 1 TO Wfin
+            NOT AT END
+              IF frep_jour = jourRep THEN
+                IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
+                DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
+                MOVE 1 TO dispoGr
+                END-IF
+              END-IF
+            END-READ
+          END-PERFORM
+           END-START.
 
         AFFICHER_PROGRAMMATION.
-              OPEN INPUT frepresentations                     
-              MOVE 1 TO Wcount   
-              DISPLAY 'Indiquer l''édition : '
-              WITH NO ADVANCING
-              ACCEPT frep_dateA 
-              MOVE frep_dateA TO dateA
-              PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
-                MOVE 0 TO Wcpt
-                MOVE 0 TO Wfin
-                MOVE dateA TO frep_dateA
-                MOVE Wcount TO Wjour
-                START frepresentations,
-                KEY = frep_dateA
-                  INVALID KEY
-                    DISPLAY 'Pas d''édition cette année'
+          OPEN INPUT frepresentations                     
+          MOVE 1 TO Wcount   
+          DISPLAY 'Indiquer l''édition : '
+          WITH NO ADVANCING
+          ACCEPT frep_dateA 
+          MOVE frep_dateA TO dateA
+          PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
+            MOVE 0 TO Wcpt
+            MOVE 0 TO Wfin
+            MOVE dateA TO frep_dateA
+            MOVE Wcount TO Wjour
+            START frepresentations,
+            KEY = frep_dateA
+              INVALID KEY
+                DISPLAY 'Pas d''édition cette année'
+                MOVE 1 TO Wfin
+                MOVE 0 TO Wtrouve
+              NOT INVALID KEY
+              MOVE 1 TO Wtrouve
+              PERFORM WITH TEST AFTER UNTIL Wfin = 1
+                READ frepresentations NEXT RECORD
+                AT END
+                  MOVE 1 TO Wfin
+                NOT AT END
+                  IF dateA = frep_dateA THEN
+                    IF frep_jour = Wjour THEN
+                    IF Wcpt = 0 THEN
+                      DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
+                      DISPLAY '|Groupe                        |Scène                         |Heure|'
+                    END-IF
+                      DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
+                      COMPUTE Wcpt = Wcpt + 1
+                    END-IF
+                    
+                  ELSE
                     MOVE 1 TO Wfin
-                    MOVE 0 TO Wtrouve
-                  NOT INVALID KEY
-                  MOVE 1 TO Wtrouve
-                  PERFORM WITH TEST AFTER UNTIL Wfin = 1
-                    READ frepresentations NEXT RECORD
-                    AT END
-                      MOVE 1 TO Wfin
-                    NOT AT END
-                      IF dateA = frep_dateA THEN
-                        IF frep_jour = Wjour THEN
-                        IF Wcpt = 0 THEN
-                          DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
-                          DISPLAY '|Groupe                        |Scène                         |Heure|'
-                        END-IF
-                          DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
-                          COMPUTE Wcpt = Wcpt + 1
-                        END-IF
-                        
-                      ELSE
-                        MOVE 1 TO Wfin
-                      END-IF
-                    END-READ
-                  END-PERFORM
-                 END-START 
-                 COMPUTE Wcount = Wcount + 1
-                 IF Wtrouve = 1 THEN
-                 DISPLAY '|______________________________|______________________________|_____|'
-                 END-IF
+                  END-IF
+                END-READ
               END-PERFORM
-              CLOSE frepresentations.
+             END-START 
+             COMPUTE Wcount = Wcount + 1
+             IF Wtrouve = 1 THEN
+             DISPLAY '|______________________________|______________________________|_____|'
+             END-IF
+          END-PERFORM
+          CLOSE frepresentations.
 
 
        SUPPRIMER_REPRESENTATION.
@@ -1456,26 +1506,30 @@ PROCEDURE DIVISION.
                     CLOSE feditions
                      END-START
               CLOSE frepresentations.
+
        
        MODIFIER_REPRESENTATION.
           OPEN I-O frepresentations
           IF fres_stat =35 THEN
              DISPLAY 'Pas de représentation'
           ELSE    
-             DISPLAY 'Clé de la représentation : '
-                     DISPLAY 'Nom de la scène :'
-                     ACCEPT frep_nomSce
-                     DISPLAY 'Année édition :'
-                     ACCEPT frep_dateA
-                     DISPLAY 'Jour :'
-                     ACCEPT frep_jour
-                     DISPLAY 'Heure :'
-                     ACCEPT frep_heureDebut
+             DISPLAY 'Indiquer le nom de la scène : '
+             WITH NO ADVANCING
+             ACCEPT frep_nomSce
+             DISPLAY 'Indiquer l''édition : '
+             WITH NO ADVANCING
+             ACCEPT frep_dateA
+             DISPLAY 'Indiquer le jour de représentation : '
+             WITH NO ADVANCING
+             ACCEPT frep_jour
+             DISPLAY 'Indiquer l''heure de représentation : '
+             WITH NO ADVANCING
+             ACCEPT frep_heureDebut
               READ frepresentations
              INVALID KEY
                DISPLAY 'La représentation n existe pas'
              NOT INVALID KEY
-                PERFORM WITH TEST AFTER UNTIL WchoixModifReserv < 1
+                PERFORM WITH TEST AFTER UNTIL choixModifReserv < 1
                    DISPLAY ' _____* Modification représentation *____'
                    DISPLAY '| Quitter                   :           0|'
                    DISPLAY '| Le jour                   :           1|'
@@ -1485,11 +1539,12 @@ PROCEDURE DIVISION.
                    DISPLAY '| Le nombre de personne max :           5|'
                    DISPLAY '|________________________________________|'
                    DISPLAY 'Faites un choix : ' WITH NO ADVANCING
-                   ACCEPT  WchoixModifReserv
-                   EVALUATE  WchoixModifReserv
+                   ACCEPT  choixModifReserv
+                   EVALUATE  choixModifReserv
                    WHEN 1 
                       PERFORM WITH TEST AFTER UNTIL frep_jour >= 01 AND frep_jour <= 03
-                         DISPLAY 'Donnez un jour (01, 02, 03)'
+                         DISPLAY 'Indiquer le jour (1, 2, 3) : '
+                         WITH NO ADVANCING
                          ACCEPT frep_jour
                          REWRITE frepTampon 
                             INVALID KEY 
@@ -1502,7 +1557,8 @@ PROCEDURE DIVISION.
                       PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 
                        AND frep_heureDebut <2400
                        DISPLAY frep_heureDebut
-                         DISPLAY 'Donnez une heure au format (HHMM)'
+                         DISPLAY 'Indiquer l''heure de début (HHMM) :'
+                         WITH NO ADVANCING
                          ACCEPT frep_heureDebut
                          DISPLAY frep_nomSce
                          DISPLAY frep_dateA
@@ -1518,7 +1574,8 @@ PROCEDURE DIVISION.
                    WHEN 3 
                      MOVE 0 TO Wtrouve
                      PERFORM WITH TEST AFTER UNTIL Wtrouve = 0
-                            DISPLAY 'Donnez le nom du groupe'
+                      DISPLAY 'Indiquer le nom du groupe : '
+                      WITH NO ADVANCING
                             ACCEPT frep_nomGr
                      PERFORM VERIF_NOM_GROUPE
                      END-PERFORM
@@ -1527,7 +1584,8 @@ PROCEDURE DIVISION.
                       END-PERFORM
                     WHEN 5 
                       PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax > 0
-                         DISPLAY 'Donnez le nouveau cachet'
+                         DISPLAY 'Indiquer le nouveau cachet : '
+                         WITH NO ADVANCING
                          ACCEPT frep_nbPersonneMax
                          REWRITE frepTampon END-REWRITE
                       END-PERFORM
@@ -1542,12 +1600,13 @@ PROCEDURE DIVISION.
            PERFORM WITH TEST AFTER UNTIL choix = 0
              PERFORM WITH TEST AFTER UNTIL choix < 9
               DISPLAY " _______* Menu gestion des scènes *_______ "
+              DISPLAY '|Quitter                  :              0|'
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
               DISPLAY "|_________________________________________|"
-
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
        
               EVALUATE choix
@@ -1662,11 +1721,11 @@ PROCEDURE DIVISION.
            MOVE 1 TO choix 
            PERFORM WITH TEST AFTER UNTIL choix= 0
               DISPLAY " ________* Modification scènes *__________"
-              DISPLAY "|Annuler              :                  0|"
+              DISPLAY '|Revenir au menu principal :             0| '
               DISPLAY "|Modifier capicité    :                  1|"
               DISPLAY "|Modifier cout        :                  2|"
               DISPLAY "|_________________________________________|"
-
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
        
               EVALUATE choix
@@ -1690,7 +1749,6 @@ PROCEDURE DIVISION.
 
 
        AFFICHER_SCENES.
-       DISPLAY '_________________________________________'
        DISPLAY 'Nom:      : ' ,fs_nomSce
        DISPLAY 'Année     : ' ,fs_dateA
        DISPLAY 'capcicité : ' ,fs_capacite
@@ -1797,16 +1855,19 @@ PROCEDURE DIVISION.
        *> Sur le cout moyen d'une scene 
        *> Sur le resultat du festival 
        AJOUT_SCENES.
+       DISPLAY '____________* Ajout d''une scène *________'.
        MOVE 0 TO Wtrouve 
        OPEN I-O feditions 
-       DISPLAY "Saisir l'année"
+       DISPLAY "Indiquer l''édition : "
+       WITH NO ADVANCING
        ACCEPT fe_dateA
        PERFORM VERIF_EDITION
       *> Si on a trouver l'edition 
        IF Wtrouve = 1
         MOVE 0 TO Wtrouve
         OPEN I-O fscenes
-        DISPLAY "Saisir le nom de la scène"
+        DISPLAY "Indiquer le nom de la scène : "
+        WITH NO ADVANCING
         ACCEPT fs_nomSce
         MOVE fe_dateA TO fs_dateA
         PERFORM VERIF_SCENES
@@ -1863,10 +1924,11 @@ PROCEDURE DIVISION.
          
        AFFICHER_SCENES_ANNEE.
        MOVE 0 TO WFin
-       DISPLAY 'Saisir l''année de l''édition' 
+       DISPLAY 'Indiquer l''édition : '
 
        PERFORM WITH TEST AFTER UNTIL fs_dateA > 1000
-          DISPLAY 'Saisir Annee au format YYYY ' 
+          DISPLAY 'Indiquer l''année (YYYY) : '
+          WITH NO ADVANCING 
           ACCEPT fs_dateA
        END-PERFORM  
 
@@ -1907,25 +1969,24 @@ PROCEDURE DIVISION.
        GESTION_EDITIONS.
        PERFORM WITH TEST AFTER UNTIL choix=0
          PERFORM WITH TEST AFTER UNTIL choix<9                 
-           DISPLAY "  _______________* Menu *_________________"
+           DISPLAY "  _______________* Menu *_________________ "
            DISPLAY " |Afficher les éditions :                1|"
            DISPLAY " |Ajout d'une éditions :                 2|"
            DISPLAY " |Modifier la capacité d'une édition :   3|"
-           DISPLAY " |Supprimer une édition                  4|"
-           DISPLAY " |Afficher le résultat d'une édition     5|"
-           DISPLAY " |Afficher le cout moyen d'une scène     6|"
-           DISPLAY " |Afficher cout moyen des artistes       7|"
+           DISPLAY " |Afficher le résultat d'une édition :   4|"
+           DISPLAY " |Afficher le cout des scènes :          5|"
+           DISPLAY " |Afficher cout des artistes :           6|"
            DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
+           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
            ACCEPT choix
            EVALUATE choix
              WHEN 1 PERFORM AFFICHER_EDITIONS
              WHEN 2 PERFORM AJOUT_EDITIONS
              WHEN 3 PERFORM MODIFIER_CAPACITE
-             WHEN 4 PERFORM SUPPRIMER_EDITION
-             WHEN 5 PERFORM AFFICHAGE_RESULTAT_EDITION
-             WHEN 6 PERFORM AFFICHAGE_COUT_SCENES
-             WHEN 7 PERFORM AFFICHAGE_COUT_ARTISTES
+             WHEN 4 PERFORM AFFICHAGE_RESULTAT_EDITION
+             WHEN 5 PERFORM AFFICHAGE_COUT_SCENES
+             WHEN 6 PERFORM AFFICHAGE_COUT_ARTISTES
            END-EVALUATE
          END-PERFORM
        END-PERFORM.
@@ -1968,16 +2029,17 @@ PROCEDURE DIVISION.
        MOVE 0 TO Wtrouve
        DISPLAY "Veuillez renseigner les informations suivantes :"
        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-         DISPLAY "Indiquez l'annee de l'édition : " WITH NO ADVANCING
+         DISPLAY "Indiquer l'annee de l'édition : " WITH NO ADVANCING
          ACCEPT fe_dateA
          READ feditions
          INVALID KEY
            PERFORM WITH TEST AFTER UNTIL fe_capacite IS NUMERIC AND
        fe_capacite > 0 
-             DISPLAY "Indiquez la capacité de l'édition : " WITH NO 
+             DISPLAY "Indiquer la capacité de l'édition : " WITH NO 
         ADVANCING
              ACCEPT fe_capacite
            END-PERFORM
+
            MOVE 0 TO fe_nbScene
            MOVE 0 TO fe_nbArtiste
            MOVE 0 TO fe_nbResaJourUn
@@ -2029,24 +2091,6 @@ PROCEDURE DIVISION.
          MOVE 1 TO Wtrouve
        END-READ.
 
-       SUPPRIMER_EDITION.
-       DISPLAY "*********"
-       DISPLAY "Choisissez l'edition parmi la liste: "
-       PERFORM AFFICHAGE_ANNEES_EDITIONS
-       OPEN I-O feditions
-         ACCEPT fe_dateA
-         READ feditions
-         INVALID KEY
-           DISPLAY "Pas d'édition correspondante."
-         NOT INVALID KEY
-           PERFORM AFFICHER_EDITION
-           MOVE fe_dateA TO fp_dateA
-           PERFORM SUPPRIMER_PASS_EDITION
-           DELETE feditions END-DELETE
-           DISPLAY "Cette édition a été supprimée"
-         END-READ
-       CLOSE feditions.
-
        AFFICHAGE_ANNEES_EDITIONS.
        OPEN I-O feditions 
        MOVE 0 TO Wfin
@@ -2088,7 +2132,8 @@ PROCEDURE DIVISION.
            DIVIDE fe_coutScenes BY fe_nbScene GIVING WcoutMoyenA END-DIVIDE
        END-READ
        CLOSE feditions.
-       *>Statistiques
+
+      *>Statistiques
        NB_ARTISTE_EDITION.
         DISPLAY 'Année ?'
         ACCEPT fe_dateA
@@ -2121,7 +2166,6 @@ PROCEDURE DIVISION.
            COMPUTE nbArtisteN = nbArtisteN - fe_nbArtiste
            DISPLAY 'Evolution : ', nbArtisteN
          END-READ
-
        END-READ
        CLOSE feditions.
 
@@ -2157,5 +2201,954 @@ PROCEDURE DIVISION.
        END-READ
        CLOSE feditions.
 
+       RESET_EDITION.
+      *>Supprime les représentations
+      *>Supprime les scènes
+      *>Met à 0 le CA
+
+       RESET_DONNEES.
+       DISPLAY "*********"
+       DISPLAY "Vous désirez créer un nouveau jeu de données."
+       DISPLAY "Attention, cette action supprimera toutes les données de"
+       DISPLAY "tous les fichiers et les remplacera par des nouvelles."
+       DISPLAY "Etes-vous sur ? :"
+       DISPLAY " 1 - Oui"
+       DISPLAY " 2 - Non"       
+       MOVE 2 TO choix
+       PERFORM WITH test AFTER UNTIL choix IS NUMERIC AND choix > 0 AND choix < 3
+       DISPLAY "Faite un choix : "  WITH NO ADVANCING
+       ACCEPT choix
+           IF choix = 1 THEN
+             OPEN OUTPUT fscenes
+             OPEN OUTPUT fgroupes
+             OPEN OUTPUT frepresentations
+             OPEN OUTPUT feditions
+             OPEN OUTPUT fpass
+             OPEN OUTPUT freservations
+
+             MOVE "ScèneA" TO fs_nomSce
+             MOVE 2015 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneB" TO fs_nomSce
+             MOVE 2015 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneC" TO fs_nomSce
+             MOVE 2015 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneA" TO fs_nomSce
+             MOVE 2016 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneB" TO fs_nomSce
+             MOVE 2016 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneC" TO fs_nomSce
+             MOVE 2016 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneA" TO fs_nomSce
+             MOVE 2017 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneB" TO fs_nomSce
+             MOVE 2017 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "ScèneC" TO fs_nomSce
+             MOVE 2017 TO fs_dateA
+             MOVE 6 TO fs_capacite
+             MOVE 2000 TO fs_cout
+             WRITE fscTampon END-WRITE
+
+             MOVE "Meshuggah" TO fg_nom
+             MOVE "Black Metal" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Nirvana" TO fg_nom
+             MOVE "Grunge" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Foo Fighters" TO fg_nom
+             MOVE "Rock américain" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Gorgoroth" TO fg_nom
+             MOVE "Black Metal" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Casimir" TO fg_nom
+             MOVE "DEATH metal" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Black Keys" TO fg_nom
+             MOVE "Rock pop" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Noisebends" TO fg_nom
+             MOVE "Rock" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Justin Bieber" TO fg_nom
+             MOVE "Horrible" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Soviet Suprem" TO fg_nom
+             MOVE "Electro Sovietique" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Zuchero" TO fg_nom
+             MOVE "Truc italien" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Airbourne" TO fg_nom
+             MOVE "Metal/Rock" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Francis Cabrel" TO fg_nom
+             MOVE "Chanson française" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Lamb of God" TO fg_nom
+             MOVE "Metal" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Queens of the stone age" TO fg_nom
+             MOVE "Stoner" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Sublim text" TO fg_nom
+             MOVE "Rock californien" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Jamiroquai" TO fg_nom
+             MOVE "Funk" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Rolling Stones" TO fg_nom
+             MOVE "Rock" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE "Lady gaga" TO fg_nom
+             MOVE "Bizarre" TO fg_style
+             WRITE fgTampon END-WRITE
+
+             MOVE 1 TO frep_jour
+             MOVE 1400 TO frep_heureDebut
+             MOVE 2015 TO frep_dateA
+             MOVE "Francis Cabrel" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 1 TO frep_jour
+             MOVE 1500 TO frep_heureDebut
+             MOVE 2015 TO frep_dateA
+             MOVE "Lady gaga" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2 TO frep_jour
+             MOVE 1600 TO frep_heureDebut
+             MOVE 2015 TO frep_dateA
+             MOVE "Rolling Stones" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2 TO frep_jour
+             MOVE 1700 TO frep_heureDebut
+             MOVE 2015 TO frep_dateA
+             MOVE "Jamiroquai" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 3 TO frep_jour
+             MOVE 1800 TO frep_heureDebut
+             MOVE 2015 TO frep_dateA
+             MOVE "Airbourne" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 3 TO frep_jour
+             MOVE 1900 TO frep_heureDebut
+             MOVE 2015 TO frep_dateA
+             MOVE "Lamb of god" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 1 TO frep_jour
+             MOVE 1400 TO frep_heureDebut
+             MOVE 2016 TO frep_dateA
+             MOVE "Justin Bieber" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 1 TO frep_jour
+             MOVE 1500 TO frep_heureDebut
+             MOVE 2016 TO frep_dateA
+             MOVE "Gorgoroth" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2 TO frep_jour
+             MOVE 1600 TO frep_heureDebut
+             MOVE 2016 TO frep_dateA
+             MOVE "Foo Fighters" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2 TO frep_jour
+             MOVE 1700 TO frep_heureDebut
+             MOVE 2016 TO frep_dateA
+             MOVE "Nirvana" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 26 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 3 TO frep_jour
+             MOVE 1800 TO frep_heureDebut
+             MOVE 2016 TO frep_dateA
+             MOVE "Casimir" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 3 TO frep_jour
+             MOVE 1900 TO frep_heureDebut
+             MOVE 2016 TO frep_dateA
+             MOVE "Black Keys" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 32 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 1 TO frep_jour
+             MOVE 1400 TO frep_heureDebut
+             MOVE 2017 TO frep_dateA
+             MOVE "Noisebends" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 1 TO frep_jour
+             MOVE 1500 TO frep_heureDebut
+             MOVE 2017 TO frep_dateA
+             MOVE "Soviet Suprem" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 25 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2 TO frep_jour
+             MOVE 1600 TO frep_heureDebut
+             MOVE 2017 TO frep_dateA
+             MOVE "Queens of the Stone Age" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 56 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2 TO frep_jour
+             MOVE 1700 TO frep_heureDebut
+             MOVE 2017 TO frep_dateA
+             MOVE "Zuchero" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 3 TO frep_jour
+             MOVE 1800 TO frep_heureDebut
+             MOVE 2017 TO frep_dateA
+             MOVE "Meshuggah" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 30 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 3 TO frep_jour
+             MOVE 1900 TO frep_heureDebut
+             MOVE 2017 TO frep_dateA
+             MOVE "Francis Cabrel" TO frep_nomGr
+             MOVE 12000 TO frep_cachet
+             MOVE 49 TO frep_nbPersonneMax
+             WRITE frepTampon END-WRITE
+
+             MOVE 2015 TO fe_dateA
+             MOVE 30 TO fe_capacite
+             MOVE 6 TO fe_nbArtiste
+             MOVE 3 TO fe_nbResaJourUn
+             MOVE 3 TO fe_nbResaJourDeux
+             MOVE 3 TO fe_nbResaJourTrois
+             MOVE 450 TO fe_resultat
+             MOVE 12000 TO fe_coutScenes
+             MOVE 72000 TO fe_coutArtistes
+             MOVE 6 TO fe_nbRepresentations
+             MOVE 570 TO fe_Ca
+             WRITE frepTampon END-WRITE
+
+             MOVE 2016 TO fe_dateA
+             MOVE 20 TO fe_capacite
+             MOVE 6 TO fe_nbArtiste
+             MOVE 20 TO fe_nbResaJourUn
+             MOVE 19 TO fe_nbResaJourDeux
+             MOVE 1 TO fe_nbResaJourTrois
+             MOVE 450 TO fe_resultat
+             MOVE 2000 TO fe_coutScenes
+             MOVE 72000 TO fe_coutArtistes
+             MOVE 6 TO fe_nbRepresentations
+             MOVE 12000 TO fe_Ca
+             WRITE frepTampon END-WRITE
+
+             MOVE 2015 TO fe_dateA
+             MOVE 30 TO fe_capacite
+             MOVE 6 TO fe_nbArtiste
+             MOVE 0 TO fe_nbResaJourUn
+             MOVE 0 TO fe_nbResaJourDeux
+             MOVE 0 TO fe_nbResaJourTrois
+             MOVE 450 TO fe_resultat
+             MOVE 2000 TO fe_coutScenes
+             MOVE 72000 TO fe_coutArtistes
+             MOVE 6 TO fe_nbRepresentations
+             MOVE 0 TO fe_Ca
+             WRITE frepTampon END-WRITE
+
+             MOVE 1 TO fp_nomPa
+             MOVE 2015 TO fp_dateA
+             MOVE 50 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 2 TO fp_nomPa
+             MOVE 2015 TO fp_dateA
+             MOVE 70 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 3 TO fp_nomPa
+             MOVE 2015 TO fp_dateA
+             MOVE 70 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 12 TO fp_nomPa
+             MOVE 2015 TO fp_dateA
+             MOVE 100 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 23 TO fp_nomPa
+             MOVE 2015 TO fp_dateA
+             MOVE 130 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 123 TO fp_nomPa
+             MOVE 2015 TO fp_dateA
+             MOVE 170 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 1 TO fp_nomPa
+             MOVE 2016 TO fp_dateA
+             MOVE 50 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 2 TO fp_nomPa
+             MOVE 2016 TO fp_dateA
+             MOVE 70 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 3 TO fp_nomPa
+             MOVE 2016 TO fp_dateA
+             MOVE 70 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 12 TO fp_nomPa
+             MOVE 2016 TO fp_dateA
+             MOVE 100 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 23 TO fp_nomPa
+             MOVE 2016 TO fp_dateA
+             MOVE 130 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 123 TO fp_nomPa
+             MOVE 2016 TO fp_dateA
+             MOVE 170 TO fp_prix
+             WRITE fpassTampon END-WRITE
+
+             MOVE 1 TO fp_nomPa
+             MOVE 2017 TO fp_dateA
+             MOVE 50 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 2 TO fp_nomPa
+             MOVE 2017 TO fp_dateA
+             MOVE 70 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 3 TO fp_nomPa
+             MOVE 2017 TO fp_dateA
+             MOVE 70 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 12 TO fp_nomPa
+             MOVE 2017 TO fp_dateA
+             MOVE 100 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 23 TO fp_nomPa
+             MOVE 2017 TO fp_dateA
+             MOVE 130 TO fp_prix
+             WRITE fpassTampon END-WRITE
+             
+             MOVE 123 TO fp_nomPa
+             MOVE 2017 TO fp_dateA
+             MOVE 170 TO fp_prix
+             WRITE fpassTampon END-WRITE
        
+             MOVE 1 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+             
+             MOVE 2 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 3 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 4 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 5 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 6 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 7 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 8 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 9 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+
+
+
+
+
+
+             MOVE 1 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 2 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 3 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 4 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 5 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 6 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 7 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 8 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 9 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 10 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 11 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 12 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 13 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 14 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 15 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 16 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 17 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 18 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 19 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 20 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 21 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 22 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 23 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 24 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 25 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 26 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 27 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 28 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 29 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 30 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 31 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 32 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 33 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 39 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 34 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 35 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 36 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 37 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 38 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 40 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             CLOSE freservations
+             CLOSE fpass
+             CLOSE feditions
+             CLOSE frepresentations
+             CLOSE fgroupes
+             CLOSE fscenes
+             DISPLAY "-------------------------------------------"
+             DISPLAY "-- Les données ont été réinitialisées ! ---"
+             DISPLAY "-------------------------------------------"
+           END-IF
+       END-PERFORM.
        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+             
+
+
+
