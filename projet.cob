@@ -117,9 +117,9 @@ FILE SECTION.
         FD frepresentations.
         01 frepTampon.
           02 frep_cleRep. 
-            03 frep_jour  PIC S9(2).
-            03 frep_heureDebut PIC S9(4).
-            03 frep_dateA PIC S9(4).
+            03 frep_jour  PIC 9(2).
+            03 frep_heureDebut PIC 9(4).
+            03 frep_dateA PIC 9(4).
             03 frep_nomSce PIC A(30).
           02 frep_nomGr PIC A(30).
           02 frep_cachet PIC S9(6).
@@ -128,9 +128,9 @@ FILE SECTION.
         FD frepresentationsTemp.
         01 frepTamponTemp.
           02 frep_cleRepT. 
-            03 frep_jourT  PIC S9(2).
-            03 frep_heureDebutT PIC S9(4).
-            03 frep_dateAT PIC S9(4).
+            03 frep_jourT  PIC 9(2).
+            03 frep_heureDebutT PIC 9(4).
+            03 frep_dateAT PIC 9(4).
             03 frep_nomSceT PIC A(30).
           02 frep_nomGrT PIC A(30).
           02 frep_cachetT PIC S9(6).
@@ -147,11 +147,10 @@ FILE SECTION.
           02 fe_nbResaJourDeux PIC 9(4). 
           02 fe_nbResaJourTrois PIC 9(4). 
           02 fe_resultat PIC S9(30). 
-          02 fe_coutMoyenScene PIC 9(30). 
+          02 fe_coutScenes PIC 9(30). 
           02 fe_coutArtistes PIC 9(30).
           02 fe_nbRepresentations PIC 9(2).       
-                           
-
+          02 fe_Ca PIC S9(30).                  
 
 WORKING-STORAGE SECTION.
       *> Déclarations des zones de compte rendu  
@@ -190,6 +189,7 @@ WORKING-STORAGE SECTION.
         77 nomDernier PIC A(30).
         77 styleDernier PIC A(30).
         77 choixModifReserv PIC 9(2).
+
     	*>Variable scenes
       *>Variables editions
         77 WdateA PIC 9999.
@@ -203,7 +203,6 @@ WORKING-STORAGE SECTION.
 
     	*>VARIABLES SCENE 
         77 WnbScene PIC 9(2).
-        77 WResTemp PIC S9(30).
         77 WCouTemp PIC 9(30).
 
       *> SUPPRIMER_SCENE
@@ -221,6 +220,8 @@ WORKING-STORAGE SECTION.
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
      *>  Statistiques
+        77 WcoutMoyenA PIC 9(30).
+        77 WcoutMoyenS PIC 9(30).
         77 nbArtisteN PIC 9(3).
         77 nbMoyArtiste PIC 999v99.
         77 nbEdition PIC 9(3).
@@ -345,22 +346,36 @@ PROCEDURE DIVISION.
                *>DISPLAY "Resa : ",fi_idResa
                 WRITE finTampon
                 END-WRITE
-               	CLOSE fincrements
+                CLOSE fincrements
 
               READ freservations
               MOVE 01 TO j
               MOVE 01 TO m
               MOVE 1801 TO j
-
-
-              DISPLAY'Quel est l''édition à laquelle il veut participer'
+              DISPLAY 'Désirez-vous afficher une programmation avant d''effectuer une réservation?'
+              DISPLAY '1 pour oui, 0 pour non : 'WITH NO ADVANCING
+              ACCEPT choix
+              IF choix = 1 THEN 
+                PERFORM WITH TEST AFTER UNTIL choix = 0
+                  PERFORM AFFICHER_PROGRAMMATION
+                  DISPLAY 'Désirez-vous afficher la programmation d''une autre édition?'
+                  DISPLAY '1 pour oui, 0 pour non : '
+                  WITH NO ADVANCING
+                  ACCEPT choix
+                END-PERFORM
+              END-IF
+              DISPLAY "____________* Nouvelle réservation *__________"
+              DISPLAY 'Indiquer l''édition désirée : '
+              WITH NO ADVANCING
               ACCEPT fres_dateA
               MOVE fres_dateA TO fp_dateA
+              DISPLAY "_____________* Liste des pass *______________"
               PERFORM AFFICHER_PASS_EDITION
               IF Wtrouve = 1 THEN
                 MOVE fres_dateA TO fe_dateA
                 PERFORM WITH TEST AFTER UNTIL Wtrouve = 1 AND Wallowed = 1
-                  DISPLAY 'Quel pass voulez vous acheter? '
+                  DISPLAY 'Indiquer le numéro de pass : '
+                  WITH NO ADVANCING
                   ACCEPT fres_nomPa
                   MOVE fres_nomPa TO fp_nomPa
                   PERFORM VERIF_PASS_ID
@@ -370,45 +385,52 @@ PROCEDURE DIVISION.
                     'séléctionné'
                 END-PERFORM
 
-                DISPLAY 'Quel est le prénom du participant?'
+                DISPLAY 'Indiquer le prénom du participant : '
+                WITH NO ADVANCING
                 ACCEPT fres_prenom
-                DISPLAY 'Quelle est son département de résidence?'
+                DISPLAY 'Indiquer son département de résidence : '
+                WITH NO ADVANCING
                 ACCEPT fres_dep
               
-  	            PERFORM WITH TEST AFTER UNTIL j>00 AND j<=31 
-  	              DISPLAY 'Quel est son jour de naissance?'
-  	              ACCEPT j
-  	            END-PERFORM
+                PERFORM WITH TEST AFTER UNTIL j>00 AND j<=31 
+                  DISPLAY 'Indiquer son jour de naissance : '
+                  WITH NO ADVANCING
+                  ACCEPT j
+                END-PERFORM
 
-  	            PERFORM WITH TEST AFTER UNTIL m>00 AND m<=12 
-  	              DISPLAY 'Quel est son mois de naissance?'
-  	              ACCEPT m
-  	            END-PERFORM
+                PERFORM WITH TEST AFTER UNTIL m>00 AND m<=12 
+                  DISPLAY 'Indiquer son mois de naissance : '
+                  WITH NO ADVANCING
+                  ACCEPT m
+                END-PERFORM
 
-  	            PERFORM WITH TEST AFTER UNTIL y>1800 AND y<=2016 
-  	              DISPLAY 'Quel est son année de naissance?'
-  	              ACCEPT y
-  	            END-PERFORM
+                PERFORM WITH TEST AFTER UNTIL y>1800 AND y<=2016 
+                  DISPLAY 'Indiquer son année de naissance : '
+                  WITH NO ADVANCING
+                  ACCEPT y
+                END-PERFORM
                 STRING j m y INTO fres_dateNaissance
 
                 PERFORM WITH TEST AFTER UNTIL Wcount > 0
                   MOVE 0 TO Wcount
-                  DISPLAY 'Quel est son adresse e-mail?'
+                  DISPLAY 'Indiquer son adresse e-mail : '
+                  WITH NO ADVANCING
                   ACCEPT fres_adresseEmail
                   INSPECT fres_adresseEmail TALLYING Wcount FOR CHARACTERS  AFTER INITIAL '@'
                 END-PERFORM
-  	            
+                
                 PERFORM WITH TEST AFTER UNTIL Wcount = 0
                   MOVE 0 TO Wcount
-  	              DISPLAY 'Quel est son numéro de téléphone?'
-  	              ACCEPT fres_numTel
+                  DISPLAY 'Indiquer son numéro de téléphone : '
+                  WITH NO ADVANCING
+                  ACCEPT fres_numTel
                   INSPECT fres_numTel TALLYING Wcount FOR ALL SPACES
                 END-PERFORM
                 MOVE fres_dateA TO fe_dateA 
-  	            WRITE fresTampon 
+                WRITE fresTampon 
                 NOT INVALID KEY
                   PERFORM MAJ_NBRESERVATION
-                  DISPLAY 'labite'
+                  DISPLAY "___________________________________________"
                 END-WRITE
               END-IF
               CLOSE freservations.
@@ -445,13 +467,14 @@ PROCEDURE DIVISION.
                  END-PERFORM
               END-PERFORM.
 
-       MODIFIER_RESERVATION_NOM.
+      MODIFIER_RESERVATION_NOM.
               OPEN I-O freservations 
                READ freservations
                INVALID KEY 
                DISPLAY "Erreur: le tampon a été altéré."
                NOT INVALID KEY
-                DISPLAY 'Quelle est le nom?'
+                DISPLAY 'Indiquer le nouveau nom : '
+                WITH NO ADVANCING
                 ACCEPT fres_prenom
                 REWRITE fresTampon
                INVALID KEY
@@ -460,6 +483,7 @@ PROCEDURE DIVISION.
                  DISPLAY "Reservation modifiée"
                END-REWRITE
               CLOSE freservations.
+
        MODIFIER_RESERVATION_MAIL.
               OPEN I-O freservations 
                READ freservations
@@ -468,7 +492,7 @@ PROCEDURE DIVISION.
                NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL Wcount > 0
                   MOVE 0 TO Wcount
-                  DISPLAY 'Quel est la nouvelle adresse e-mail?'
+                  DISPLAY 'Indiquer le nouvel e-mail :' WITH NO ADVANCING
                   ACCEPT fres_adresseEmail
                   INSPECT fres_adresseEmail TALLYING Wcount FOR CHARACTERS  AFTER INITIAL '@'
                 END-PERFORM
@@ -488,7 +512,7 @@ PROCEDURE DIVISION.
                NOT INVALID KEY
                 PERFORM WITH TEST AFTER UNTIL Wcount = 0
                   MOVE 0 TO Wcount
-                  DISPLAY 'Quel est son numéro de téléphone?'
+                  DISPLAY 'Indiquer le nouveau numéro de téléphone : '
                   ACCEPT fres_numTel
                   INSPECT fres_numTel TALLYING Wcount FOR ALL SPACES
                 END-PERFORM
@@ -524,7 +548,7 @@ PROCEDURE DIVISION.
                     COMPUTE fe_nbResaJourDeux = fe_nbResaJourDeux + 1
                     COMPUTE fe_nbResaJourTrois = fe_nbResaJourTrois + 1
                 END-EVALUATE
-                COMPUTE fe_resultat = fe_resultat + fp_prix
+                COMPUTE fe_Ca = fe_Ca + fp_prix
                 REWRITE fedTampon
                  INVALID KEY
                    DISPLAY "impossible d''ajouter une réservation"
@@ -600,13 +624,20 @@ PROCEDURE DIVISION.
        RECHERCHE_RESERVATION_NOM.
               OPEN INPUT freservations 
               MOVE 0 TO Wfin
-              PERFORM RECHERCHE_PASS_EDITION
-              DISPLAY 'Pour quel pass voulez vous afficher les participant?'
+              DISPLAY 'Voulez-vous afficher les pass d''une édition avant de faire votre recherche?'
+              DISPLAY '1 pour oui, 0 pour non :'
+              WITH NO ADVANCING
+              ACCEPT choix 
+              IF choix = 1 THEN
+                PERFORM RECHERCHE_PASS_EDITION
+              END-IF
+              DISPLAY 'Indiquer le numéro du pass : '
+              WITH NO ADVANCING
               ACCEPT fres_nomPa 
               MOVE fres_nomPa TO nomPa
               START freservations, KEY = fres_nomPa
                 INVALID KEY 
-                     DISPLAY "Il n'y a aucune réservation à ce nom."
+                     DISPLAY "Il n'y a aucune réservation à ce pass."
                 NOT INVALID KEY
                   PERFORM WITH TEST AFTER UNTIL  Wfin = 1
                      READ freservations NEXT RECORD
@@ -627,20 +658,23 @@ PROCEDURE DIVISION.
        RECHERCHE_RESERVATION_ID.
                MOVE 0 TO Wtrouve
                OPEN INPUT freservations 
-               DISPLAY 'Quel est l''id du participant?'
+               DISPLAY 'Indiquer l''id du participant : '
+               WITH NO ADVANCING
                ACCEPT fres_id 
                READ freservations
                INVALID KEY 
                DISPLAY "Il n'y a aucune réservation à cet id."
                NOT INVALID KEY
                MOVE 1 TO Wtrouve
+               DISPLAY '  _____________* Réservation *_____________'
                PERFORM AFFICHER_RESERVATION
               CLOSE freservations.
 
        RECHERCHE_RESERVATION_EDITION.
               OPEN I-O freservations 
               MOVE 0 TO Wfin
-              DISPLAY 'Quelle édition voulez vous rechercher?'
+              DISPLAY 'Indiquer l''édition : '
+              WITH NO ADVANCING
               ACCEPT fres_dateA 
               MOVE fres_dateA  TO dateA
               START freservations, KEY = fres_dateA
@@ -663,7 +697,8 @@ PROCEDURE DIVISION.
 
        RECHERCHE_RESERVATION_DEP.
               OPEN INPUT freservations 
-              DISPLAY 'Quelle département voulez vous rechercher?'
+              DISPLAY 'Indiquer le département : '
+              WITH NO ADVANCING
               MOVE 0 TO Wfin
               ACCEPT fres_dep  
               MOVE fres_dep   TO dep
@@ -686,7 +721,6 @@ PROCEDURE DIVISION.
               CLOSE freservations.
 
        AFFICHER_RESERVATION.
-        DISPLAY '_________________________________________'
         DISPLAY 'Id de réservation  : ', fres_id 
         DISPLAY 'Pass               : ', fres_nomPa
         DISPLAY 'Prénom             : ', fres_prenom
@@ -721,14 +755,17 @@ PROCEDURE DIVISION.
        OPEN I-O fpass 
        MOVE 2000 TO fp_dateA
        PERFORM WITH TEST AFTER UNTIL fp_dateA>1999
-        DISPLAY 'Pour quelle édition voulez vous ajouter un pass?'
+         DISPLAY 'Indiquer l''édition désirée : '
+         WITH NO ADVANCING
          ACCEPT fp_dateA
        END-PERFORM
-       DISPLAY 'Quelle est le nom du pass?'
+       DISPLAY 'Indiquer le nom du pass : '
+       WITH NO ADVANCING
        ACCEPT fp_nomPa
        READ fpass
        INVALID KEY
-         DISPLAY 'Quel prix donnez vous au pass?'
+         DISPLAY 'Indique le prix : '
+         WITH NO ADVANCING
          ACCEPT fp_prix
          WRITE fpassTampon END-WRITE
        NOT INVALID KEY
@@ -738,43 +775,50 @@ PROCEDURE DIVISION.
        GENERER_PASS.
         OPEN I-O fpass 
 
-        DISPLAY 'Quel prix donnez vous au pass premier jour?'
+        DISPLAY 'Indiquer le prix du pass premier jour : '
+        WITH NO ADVANCING
         MOVE 1 TO fp_nomPa
         ACCEPT fp_prix
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass deuxième jour?'
+        DISPLAY 'Indiquer le prix du pass deuxième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 2 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass troisième jour?'
+        DISPLAY 'Indiquer le prix du pass troisième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 3 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass premier et deuxième jour?'
+        DISPLAY 'Indiquer le prix du pass premier et deuxième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 12 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass deuxième et troisième jour?'
+        DISPLAY 'Indiquer le prix du pass deuxième et troisième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 23 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass premier et troisième jour?'
+        DISPLAY 'Indiquer le prix du pass premier et troisième jour : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 13 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
         WRITE fpassTampon END-WRITE
 
-        DISPLAY 'Quel prix donnez vous au pass trois jours?'
+        DISPLAY 'Indiquer le prix du pass trois jours : '
+        WITH NO ADVANCING
         ACCEPT fp_prix
         MOVE 123 TO fp_nomPa
         PERFORM VERIF_FORMAT_PRIX
@@ -784,7 +828,8 @@ PROCEDURE DIVISION.
 
         VERIF_FORMAT_PRIX.
           PERFORM WITH TEST BEFORE UNTIL fp_prix > 0
-          DISPLAY 'Veuillez saisir une valeur numérique'
+          DISPLAY 'Veuillez saisir une valeur numérique : '
+          WITH NO ADVANCING
           ACCEPT fp_prix
           END-PERFORM.
 
@@ -806,7 +851,7 @@ PROCEDURE DIVISION.
        END-PERFORM.
 
        RECHERCHE_PASS_EDITION.
-       DISPLAY 'Quel est l''édition?'
+       DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
        ACCEPT fp_dateA 
        PERFORM AFFICHER_PASS_EDITION.
        
@@ -853,16 +898,15 @@ PROCEDURE DIVISION.
          INVALID KEY 
               DISPLAY "Ce pass n'est pas valide"
          NOT INVALID KEY
-         	  DISPLAY "Pass correcte"
          	  MOVE 1 TO Wtrouve
         END-READ
         CLOSE fpass.
 
        RECHERCHE_PASS_ID.
         OPEN I-O fpass 
-        DISPLAY 'Quelle édition voulez vous rechercher un pass?'
+        DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
         ACCEPT fp_dateA
-        DISPLAY 'Quelle est le nom du pass?'
+        DISPLAY 'Indiquer le nom du pass : 'WITH NO ADVANCING
         ACCEPT fp_nomPa
         READ fpass
         INVALID KEY 
@@ -878,9 +922,9 @@ PROCEDURE DIVISION.
 
        MODIFIER_PASS.
         OPEN I-O fpass 
-        DISPLAY 'Quelle édition voulez vous rechercher un pass?'
+        DISPLAY 'Indiquer l''édition : 'WITH NO ADVANCING
         ACCEPT fp_dateA
-        DISPLAY 'Quelle est le nom du pass?'
+        DISPLAY 'Indiquer le nom du pass : 'WITH NO ADVANCING
         ACCEPT fp_nomPa
         READ fpass
         INVALID KEY 
@@ -918,18 +962,21 @@ PROCEDURE DIVISION.
           CLOSE fpass.
 
        REECRIRE_PASS.
-        PERFORM CHOIX_MODIF_PASS
+        PERFORM choix_MODIF_PASS
             EVALUATE choix
               WHEN 1 
                 DELETE fpass
-                DISPLAY 'Quelle est le nouveau nom du pass?'
+                DISPLAY 'Indiquer le nouveau nom : '
+                WITH NO ADVANCING
                 ACCEPT fp_nomPa
               WHEN 2 
                 DELETE fpass
-                DISPLAY 'Quelle est la nouvelle édition?'
+                DISPLAY 'Indiquer la nouvelle édition : '
+                WITH NO ADVANCING
                 ACCEPT fp_dateA
               WHEN 3 
-                DISPLAY 'Quelle est le nouveau prix?'
+                DISPLAY 'Indiquer le nouveau prix : '
+                WITH NO ADVANCING
                 ACCEPT Wprix
                 MOVE fp_dateA TO fe_dateA
                 PERFORM MAJ_PRIX_PASS_EDITION
@@ -968,7 +1015,7 @@ PROCEDURE DIVISION.
                 AT END MOVE 1 TO Wfin
                 NOT AT END
                  IF fp_dateA = dateA THEN
-                   COMPUTE fe_resultat = fe_resultat - fp_prix + Wprix
+                   COMPUTE fe_Ca = fe_Ca - fp_prix + Wprix
                  ELSE                      
                    MOVE 1 TO Wfin
                  END-IF
@@ -987,7 +1034,6 @@ PROCEDURE DIVISION.
 
 
        AFFICHER_PASS.
-        DISPLAY '_________________________________________'
         DISPLAY 'Nom                : ', fp_nomPa
         DISPLAY 'Edition            : ', fp_dateA 
         DISPLAY 'Prix               : ', fp_prix
@@ -1011,14 +1057,14 @@ PROCEDURE DIVISION.
        GESTION_GROUPES.
         PERFORM WITH TEST AFTER UNTIL choix=0
          PERFORM WITH TEST AFTER UNTIL choix<5                 
-              DISPLAY '  _______* Menu gestion des groupes *_____'
-              DISPLAY ' |Revenir au menu principal :            0| '
-              DISPLAY ' |Ajouter un groupe         :            1|'
-              DISPLAY ' |Afficher les groupes      :            2|'
-              DISPLAY ' |Supprimer un groupe       :            3|'
-              DISPLAY ' |Modifier un groupe        :            4|'
+              DISPLAY '  ____* Menu de gestion des groupes *_____'
+              DISPLAY ' |Revenir au menu principal            : 0| '
+              DISPLAY ' |Ajouter un groupe                    : 1|'
+              DISPLAY ' |Afficher les groupes                 : 2|'
+              DISPLAY ' |Supprimer un groupe                  : 3|'
+              DISPLAY ' |Modifier un groupe                   : 4|'
               DISPLAY ' |Afficher le nombre de groupe/edition : 5|'
-              DISPLAY ' |Evolution deux années successives :    6|'
+              DISPLAY ' |Evolution deux années successives    : 6|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
@@ -1036,27 +1082,30 @@ PROCEDURE DIVISION.
               
        AJOUTER_GROUPE.
               MOVE 'n' to quitter
+              DISPLAY "____________* Nouveau groupe *__________"
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 0 AND nomGr IS NOT = ' '
-                    DISPLAY 'Nom du groupe ?'
-                        ACCEPT nomGr
-                         IF nomGr = ' ' THEN
-                      DISPLAY 'Le nom ne peut être vide !!'
-                        ELSE
-                        PERFORM VERIF_NOM_GROUPE
-                        END-IF
-                        IF Wtrouve = 1 THEN
-                         DISPLAY 'le groupe existe dèjà !!'
-                         DISPLAY 'voulez-vous quitter ? (n/o)'
-                          ACCEPT quitter
-                          IF quitter = 'o' THEN 
-                            MOVE 0 TO Wtrouve
-                          END-IF
-                        END-IF
+                    DISPLAY 'Indiquer le nom du groupe : '
+                    WITH NO ADVANCING
+                ACCEPT nomGr
+                  IF nomGr = ' ' THEN
+                  DISPLAY 'Le nom ne peut être vide !!'
+                  ELSE
+                  PERFORM VERIF_NOM_GROUPE
+                END-IF
+                IF Wtrouve = 1 THEN
+                  DISPLAY 'le groupe existe dèjà !!'
+                  DISPLAY 'voulez-vous quitter ? (n/o)'
+                  ACCEPT quitter
+                  IF quitter = 'o' THEN 
+                    MOVE 0 TO Wtrouve
+                  END-IF
+                END-IF
               END-PERFORM
               IF quitter = 'n' THEN
               MOVE nomGr TO fg_nom
               PERFORM WITH TEST AFTER UNTIL fg_style IS NOT = ' '
-              DISPLAY 'Style du groupe ?'
+              DISPLAY 'Indiquer le style du groupe : '
+              WITH NO ADVANCING
               ACCEPT fg_style
               END-PERFORM
               OPEN EXTEND fgroupes
@@ -1071,11 +1120,10 @@ PROCEDURE DIVISION.
               PERFORM WITH TEST AFTER UNTIL Wfin = 1 OR Wtrouve = 1
               READ fgroupes
                 AT END MOVE 1 TO Wfin
-                     DISPLAY 'Groupe inexistant'
+                     
                 NOT AT END
                 IF fg_nom = nomGr THEN
                       MOVE 1 TO Wtrouve
-                     DISPLAY 'Groupe trouvé'      
                 END-IF
               END-READ
               END-PERFORM
@@ -1084,20 +1132,23 @@ PROCEDURE DIVISION.
         AFFICHER_GROUPES.
               OPEN INPUT fgroupes
               MOVE 0 TO Wfin
+              DISPLAY '|____________________* Affichage des groupes  *_______________|'
+              DISPLAY '|Groupe                        |Style                         |'
               PERFORM WITH TEST AFTER UNTIL Wfin = 1
               READ fgroupes
                 AT END MOVE 1 TO Wfin
-                  DISPLAY 'fin'
                 NOT AT END
-                  DISPLAY 'Nom : ',fg_nom,'Style : ',fg_style
+                  DISPLAY '|',fg_nom,'|',fg_style,'|'
               END-READ
               END-PERFORM
+              DISPLAY '|______________________________|______________________________|'
               CLOSE fgroupes.
 
        SUPPRIMER_GROUPE.
               OPEN INPUT fgroupes
               OPEN OUTPUT fgroupesTemp
-              DISPLAY 'Nom du groupe ?'
+              DISPLAY 'Indiquer le nom du groupe : '
+              WITH NO ADVANCING
               ACCEPT nomGr
               MOVE 0 TO Wfin
               PERFORM WITH TEST AFTER UNTIL Wfin = 1
@@ -1130,7 +1181,8 @@ PROCEDURE DIVISION.
 
        MODIFIER_GROUPE.
               OPEN INPUT fgroupes
-              DISPLAY 'Nom du groupe ?'
+              DISPLAY 'Indiquer le nom du groupe : '
+              WITH NO ADVANCING
               ACCEPT nomGr
               MOVE 0 TO Wfin
               MOVE 0 TO pos
@@ -1151,17 +1203,22 @@ PROCEDURE DIVISION.
                 OPEN I-O fgroupes
                 MOVE 0 to choixMenu
               PERFORM WITH TEST AFTER UNTIL choixMenu>0 OR choixMenu<=2                 
-                DISPLAY 'Que voulez-vous modifier ?'
-                DISPLAY '1- Le nom'
-                DISPLAY '2- Le style'
+                DISPLAY '  _______* Modification des groupes *_____'
+                DISPLAY ' |Annuler             :                  0|'
+                DISPLAY ' |Modifier le nom     :                  1|'
+                DISPLAY ' |Modifier le style   :                  2|'
+                DISPLAY ' |________________________________________|'
+                DISPLAY 'Faites un choix : ' WITH NO ADVANCING  
               ACCEPT choixMenu
               EVALUATE choixMenu
               WHEN 1 
-                DISPLAY 'Nouveau nom = '
+                DISPLAY 'Indiquer le nouveau nom : '
+                WITH NO ADVANCING 
                 ACCEPT nomGr
                 MOVE fg_style to styleGr
               WHEN 2 
-                DISPLAY 'Nouveau style = '
+                DISPLAY 'Indiquer le nouveau style : '
+                WITH NO ADVANCING 
                 ACCEPT styleGr
                 MOVE fg_nom to nomGr
               END-EVALUATE
@@ -1179,24 +1236,24 @@ PROCEDURE DIVISION.
               DISPLAY 'groupe modifié'
               CLOSE fgroupes
               ELSE
-                DISPLAY 'le groupe n existe pas'
+                DISPLAY 'le groupe n''existe pas'
               END-IF.
       *>Gestion des représentations
        GESTION_REPRESENTATIONS.
               PERFORM WITH TEST AFTER UNTIL choix=0
          PERFORM WITH TEST AFTER UNTIL choix<5                 
-              DISPLAY '  __* Menu gestion des représentation *___'
-              DISPLAY ' |Revenir au menu principal :            0| '
-              DISPLAY ' |Ajouter une nouvelle représentation :  1|'
-              DISPLAY ' |Afficher les représentations par année:2|'
-              DISPLAY ' |Supprimer une représentation :         3|'
-              DISPLAY ' |Modifier  une représentation :         4|'
+              DISPLAY '  _* Menu de gestion des représentation *_'
+              DISPLAY ' |Revenir au menu principal            : 0| '
+              DISPLAY ' |Ajouter une nouvelle représentation  : 1|'
+              DISPLAY ' |Afficher la programmation            : 2|'
+              DISPLAY ' |Supprimer une représentation         : 3|'
+              DISPLAY ' |Modifier  une représentation         : 4|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
               EVALUATE choix
               WHEN 1 PERFORM AJOUTER_NOUVELLE_REPRESENTATION
-              WHEN 2 PERFORM AFFICHER_REPRESENTATION
+              WHEN 2 PERFORM AFFICHER_PROGRAMMATION
               WHEN 3 PERFORM SUPPRIMER_REPRESENTATION
               WHEN 4 PERFORM MODIFIER_REPRESENTATION
        END-EVALUATE
@@ -1204,255 +1261,263 @@ PROCEDURE DIVISION.
        END-PERFORM.
 
        AJOUTER_NOUVELLE_REPRESENTATION.
-              OPEN I-O frepresentations
-              MOVE 0 TO Wtrouve
-            PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-              DISPLAY 'Année ?'
-              ACCEPT fe_dateA
-              OPEN INPUT feditions 
-                PERFORM VERIF_EDITION
+        DISPLAY "____________* Nouvelle représentation *__________"
+        OPEN I-O frepresentations
+        MOVE 0 TO Wtrouve
+        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+        DISPLAY 'Indiquer l''édition de la représentation : '
+        WITH NO ADVANCING
+        ACCEPT fe_dateA
+        OPEN INPUT feditions 
+          PERFORM VERIF_EDITION
+        CLOSE feditions
+        END-PERFORM
+        MOVE 0 TO Wtrouve
+          PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+          PERFORM AFFICHER_GROUPES
+            DISPLAY 'Indiquer le nom du groupe : '
+            WITH NO ADVANCING
+            ACCEPT nomGr
+          PERFORM VERIF_NOM_GROUPE
+          END-PERFORM
+          MOVE nomGr TO frep_nomGr
+        MOVE fe_dateA to frep_dateA
+
+        PERFORM WITH TEST AFTER UNTIL frep_jour <= 3 AND frep_jour > 0
+          DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
+          WITH NO ADVANCING
+          ACCEPT frep_jour
+        END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL dispoGr = 0
+        PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
+          DISPLAY 'Indiquer l''heure de début (HH) : '
+          WITH NO ADVANCING
+          ACCEPT frep_heureDebut
+        END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
+          DISPLAY 'et les minutes (MM) : '
+          WITH NO ADVANCING
+          ACCEPT minutes
+        END-PERFORM
+        COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+        MOVE frep_heureDebut TO heureRep
+        MOVE frep_jour TO jourRep
+        MOVE frepTampon TO frepTamponTemp
+        PERFORM VERIF_DISPO_GROUPE
+        MOVE frepTamponTemp TO frepTampon
+        END-PERFORM
+        *> Incrémentation du nombre d'artiste
+
+        START frepresentations,
+          KEY = frep_nomGr
+            INVALID KEY
+              OPEN I-O feditions
+                READ feditions
+                  NOT INVALID KEY
+                    COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                    REWRITE fedTampon 
+                END-READ
               CLOSE feditions
-            END-PERFORM
-            MOVE 0 TO Wtrouve
-              PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-              PERFORM AFFICHER_GROUPES
-                DISPLAY 'Indiquer le nom du groupe : '
-                WITH NO ADVANCING
-                ACCEPT nomGr
-              PERFORM VERIF_NOM_GROUPE
-              END-PERFORM
-              MOVE nomGr TO frep_nomGr
-            MOVE fe_dateA to frep_dateA
+           END-START
 
-              PERFORM WITH TEST AFTER UNTIL frep_jour <= 3 AND frep_jour > 0
-                DISPLAY 'Indiquer le jour(1, 2, ou 3) : '
-                WITH NO ADVANCING
-                ACCEPT frep_jour
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL dispoGr = 0
-              PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
-                DISPLAY 'Indiquer l''heure de début (HH) : '
-                WITH NO ADVANCING
-                ACCEPT frep_heureDebut
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
-                DISPLAY 'et les minutes (MM) : '
-                WITH NO ADVANCING
-                ACCEPT minutes
-              END-PERFORM
-              COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-              MOVE frep_heureDebut TO heureRep
-              MOVE frep_jour TO jourRep
-              MOVE frepTampon TO frepTamponTemp
-              PERFORM VERIF_DISPO_GROUPE
-              MOVE frepTamponTemp TO frepTampon
-              END-PERFORM
-              *> Incrémentation du nombre d'artiste
+        MOVE nomGr TO frep_nomSce
+        MOVE 0 TO Wtrouve
+        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
+        MOVE frep_dateA to fs_dateA
+        PERFORM AFFICHER_SCENES_ANNEE_SP
+        DISPLAY 'Indiquer le nom de la scènes : '
+        WITH NO ADVANCING
+        ACCEPT frep_nomSce
+        OPEN INPUT fscenes
+         MOVE frep_nomSce to fs_nomSce
+          MOVE frep_dateA to fs_dateA               
+         READ fscenes
+          INVALID KEY 
+           DISPLAY 'La scene n''existe pas '
+          NOT INVALID KEY 
+           MOVE 1 TO Wtrouve
+           DISPLAY 'La scene est présente' 
+         END-READ 
+        CLOSE fscenes
+        END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
+          DISPLAY 'Indiquer le cachet de l''artiste : '
+          WITH NO ADVANCING
+          ACCEPT frep_cachet
+        END-PERFORM
+        OPEN INPUT fscenes
 
-              START frepresentations,
-                KEY = frep_nomGr
-                  INVALID KEY
-                    OPEN I-O feditions
-                      READ feditions
-                        NOT INVALID KEY
-                          COMPUTE fe_nbArtiste = fe_nbArtiste + 1
-                          REWRITE fedTampon 
-                      END-READ
-                    CLOSE feditions
-                 END-START
-
-              MOVE nomGr TO frep_nomSce
-              MOVE 0 TO Wtrouve
-              PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-              MOVE frep_dateA to fs_dateA
-              PERFORM AFFICHER_SCENES_ANNEE_SP
-              DISPLAY 'Indiquer le nom de la scènes : '
-              WITH NO ADVANCING
-              ACCEPT frep_nomSce
-              OPEN INPUT fscenes
-               MOVE frep_nomSce to fs_nomSce
-                MOVE frep_dateA to fs_dateA               
-               READ fscenes
-                INVALID KEY 
-                 DISPLAY 'La scene n''existe pas '
-                NOT INVALID KEY 
-                 MOVE 1 TO Wtrouve
-                 DISPLAY 'La scene est présente' 
-               END-READ 
-              CLOSE fscenes
-              END-PERFORM
-              PERFORM WITH TEST AFTER UNTIL frep_cachet GREATER 0
-                DISPLAY 'Cachet artiste : '
-                WITH NO ADVANCING
-                ACCEPT frep_cachet
-              END-PERFORM
-              OPEN INPUT fscenes
-
-              Close fscenes
-              PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax <= fs_capacite
-                DISPLAY 'Nombre de personne max : '
-                WITH NO ADVANCING
-                ACCEPT frep_nbPersonneMax
-              END-PERFORM
-              WRITE frepTampon 
-                INVALID KEY
-                DISPLAY 'erreur interne  ******'
-                NOT INVALID KEY
-                DISPLAY 'représentation ajoutée'
-              END-WRITE
-              CLOSE frepresentations.
+        Close fscenes
+        PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax <= fs_capacite
+          DISPLAY 'Indiquer le nombre max de personnes sur scène : '
+          WITH NO ADVANCING
+          ACCEPT frep_nbPersonneMax
+        END-PERFORM
+        WRITE frepTampon 
+          INVALID KEY
+          DISPLAY 'erreur interne  ******'
+          NOT INVALID KEY
+          DISPLAY 'représentation ajoutée'
+        END-WRITE
+        CLOSE frepresentations.
 
         AFFICHER_REPRESENTATION.
-        MOVE 0 to Wfin
-              OPEN INPUT frepresentations                        
-                DISPLAY 'Année de l édition ?'
-                ACCEPT frep_dateA 
-                START frepresentations,
-                KEY = frep_dateA
-                  INVALID KEY
-                    DISPLAY 'Pas d édition cette année'
-                    MOVE 1 TO Wfin
-                  NOT INVALID KEY
-                PERFORM WITH TEST AFTER UNTIL Wfin = 1
-                  READ frepresentations NEXT RECORD
-                  AT END
-                    DISPLAY "C'est tout!"
-                    MOVE 1 TO Wfin
-                  NOT AT END
-                    DISPLAY 'Le groupe ',frep_nomGr,'joue sur 'frep_nomSce,'le ',frep_jour,' à ',frep_heureDebut
-                  END-READ
-                END-PERFORM
-                 END-START
-                CLOSE frepresentations.
+          MOVE 0 to Wfin
+          OPEN INPUT frepresentations                        
+          DISPLAY 'Indiquer l''année de représentation : '
+          WITH NO ADVANCING
+          ACCEPT frep_dateA 
+          START frepresentations,
+          KEY = frep_dateA
+            INVALID KEY
+              DISPLAY 'Pas d''édition cette année'
+              MOVE 1 TO Wfin
+            NOT INVALID KEY
+          PERFORM WITH TEST AFTER UNTIL Wfin = 1
+            READ frepresentations NEXT RECORD
+            AT END
+              MOVE 1 TO Wfin
+            NOT AT END
+              DISPLAY 'Le groupe ',frep_nomGr,' joue sur ', frep_nomSce,'le ',frep_jour,' à ',frep_heureDebut
+            END-READ
+          END-PERFORM
+           END-START
+          CLOSE frepresentations.
 
         VERIF_DISPO_GROUPE.
-        MOVE 0 TO dispoGr                       
-                START frepresentations,
-                KEY = frep_nomGr
-                  INVALID KEY
-                    DISPLAY 'Pas de représentation pour ce groupe'
-                    MOVE 1 TO Wfin
-                  NOT INVALID KEY
-                PERFORM WITH TEST AFTER UNTIL Wfin = 1
-                  READ frepresentations NEXT RECORD
-                  AT END
-                    MOVE 1 TO Wfin
-                  NOT AT END
-                    IF frep_jour = jourRep THEN
-                      IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
-                      DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
-                      MOVE 1 TO dispoGr
-                      END-IF
-                    END-IF
-                  END-READ
-                END-PERFORM
-                 END-START.
+          MOVE 0 TO dispoGr                       
+          START frepresentations,
+          KEY = frep_nomGr
+            INVALID KEY
+              DISPLAY 'Pas de représentation pour ce groupe'
+              MOVE 1 TO Wfin
+            NOT INVALID KEY
+          PERFORM WITH TEST AFTER UNTIL Wfin = 1
+            READ frepresentations NEXT RECORD
+            AT END
+              MOVE 1 TO Wfin
+            NOT AT END
+              IF frep_jour = jourRep THEN
+                IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
+                DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
+                MOVE 1 TO dispoGr
+                END-IF
+              END-IF
+            END-READ
+          END-PERFORM
+           END-START.
 
         AFFICHER_PROGRAMMATION.
-              OPEN INPUT frepresentations                     
-              MOVE 1 TO Wcount   
-              DISPLAY 'Indiquer l''édition : '
-              WITH NO ADVANCING
-              ACCEPT frep_dateA 
-              MOVE frep_dateA TO dateA
-              PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
-                MOVE 0 TO Wcpt
-                MOVE 0 TO Wfin
-                MOVE dateA TO frep_dateA
-                MOVE Wcount TO Wjour
-                START frepresentations,
-                KEY = frep_dateA
-                  INVALID KEY
-                    DISPLAY 'Pas d''édition cette année'
+          OPEN INPUT frepresentations                     
+          MOVE 1 TO Wcount   
+          DISPLAY 'Indiquer l''édition : '
+          WITH NO ADVANCING
+          ACCEPT frep_dateA 
+          MOVE frep_dateA TO dateA
+          PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
+            MOVE 0 TO Wcpt
+            MOVE 0 TO Wfin
+            MOVE dateA TO frep_dateA
+            MOVE Wcount TO Wjour
+            START frepresentations,
+            KEY = frep_dateA
+              INVALID KEY
+                DISPLAY 'Pas d''édition cette année'
+                MOVE 1 TO Wfin
+                MOVE 0 TO Wtrouve
+              NOT INVALID KEY
+              MOVE 1 TO Wtrouve
+              PERFORM WITH TEST AFTER UNTIL Wfin = 1
+                READ frepresentations NEXT RECORD
+                AT END
+                  MOVE 1 TO Wfin
+                NOT AT END
+                  IF dateA = frep_dateA THEN
+                    IF frep_jour = Wjour THEN
+                    IF Wcpt = 0 THEN
+                      DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
+                      DISPLAY '|Groupe                        |Scène                         |Heure|'
+                    END-IF
+                      DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
+                      COMPUTE Wcpt = Wcpt + 1
+                    END-IF
+                    
+                  ELSE
                     MOVE 1 TO Wfin
-                    MOVE 0 TO Wtrouve
-                  NOT INVALID KEY
-                  MOVE 1 TO Wtrouve
-                  PERFORM WITH TEST AFTER UNTIL Wfin = 1
-                    READ frepresentations NEXT RECORD
-                    AT END
-                      MOVE 1 TO Wfin
-                    NOT AT END
-                      IF dateA = frep_dateA THEN
-                        IF frep_jour = Wjour THEN
-                        IF Wcpt = 0 THEN
-                          DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
-                          DISPLAY '|Groupe                        |Scène                         |Heure|'
-                        END-IF
-                          DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
-                          COMPUTE Wcpt = Wcpt + 1
-                        END-IF
-                        
-                      ELSE
-                        MOVE 1 TO Wfin
-                      END-IF
-                    END-READ
-                  END-PERFORM
-                 END-START 
-                 COMPUTE Wcount = Wcount + 1
-                 IF Wtrouve = 1 THEN
-                 DISPLAY '|______________________________|______________________________|_____|'
-                 END-IF
+                  END-IF
+                END-READ
               END-PERFORM
-              CLOSE frepresentations.
+             END-START 
+             COMPUTE Wcount = Wcount + 1
+             IF Wtrouve = 1 THEN
+             DISPLAY '|______________________________|______________________________|_____|'
+             END-IF
+          END-PERFORM
+          CLOSE frepresentations.
 
 
        SUPPRIMER_REPRESENTATION.
-              OPEN I-O frepresentations
-                 DISPLAY 'Nom de la scène :'
-                 ACCEPT frep_nomSce
-                 DISPLAY 'Année édition :'
-                 ACCEPT frep_dateA
-                 DISPLAY 'Jour :'
-                 ACCEPT frep_jour
-                 DISPLAY 'Indiquer l''heure de représentation (HH): '
-                 WITH NO ADVANCING
-                 ACCEPT frep_heureDebut
-                 DISPLAY 'et les minutes (MM) : '
-                 WITH NO ADVANCING
-                 ACCEPT minutes
-                 COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-                 READ frepresentations
-                  MOVE frep_nomGr TO nomGr
-                 DELETE frepresentations RECORD
-                  INVALID KEY
-                    DISPLAY 'La représentation n existe pas'
-                  NOT INVALID KEY
-                    MOVE nomGr TO frep_nomGr
-                   DISPLAY 'Représentation supprimée'
-                   DISPLAY frep_nomGr
-                    START frepresentations,
-                    KEY = frep_nomGr
-                      INVALID KEY
-                        OPEN I-O feditions
-                        READ feditions
-                        NOT INVALID KEY
-                          COMPUTE fe_nbArtiste = fe_nbArtiste - 1
-                          REWRITE fedTampon 
-                      END-READ
-                    CLOSE feditions
-                     END-START
-              CLOSE frepresentations.
+         OPEN I-O frepresentations
+         DISPLAY 'Indiquer le nom de la scène : '
+         WITH NO ADVANCING
+         ACCEPT frep_nomSce
+         DISPLAY 'Indiquer l''édition : '
+         WITH NO ADVANCING
+         ACCEPT frep_dateA
+         DISPLAY 'Indiquer le jour de représentation : '
+         WITH NO ADVANCING
+         ACCEPT frep_jour
+         DISPLAY 'Indiquer l''heure de représentation (HH): '
+         WITH NO ADVANCING
+         ACCEPT frep_heureDebut
+         DISPLAY 'et les minutes (MM) : '
+         WITH NO ADVANCING
+         ACCEPT minutes
+         COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+         READ frepresentations
+          MOVE frep_nomGr TO nomGr
+         DELETE frepresentations RECORD
+          INVALID KEY
+            DISPLAY 'La représentation n existe pas'
+          NOT INVALID KEY
+            MOVE nomGr TO frep_nomGr
+           DISPLAY 'Représentation supprimée'
+           DISPLAY frep_nomGr
+            START frepresentations,
+            KEY = frep_nomGr
+              INVALID KEY
+                OPEN I-O feditions
+                READ feditions
+                NOT INVALID KEY
+                  COMPUTE fe_nbArtiste = fe_nbArtiste - 1
+                  REWRITE fedTampon 
+              END-READ
+            CLOSE feditions
+             END-START
+      CLOSE frepresentations.
        
        MODIFIER_REPRESENTATION.
           OPEN I-O frepresentations
           IF fres_stat =35 THEN
              DISPLAY 'Pas de représentation'
           ELSE    
-             DISPLAY 'Clé de la représentation : '
-                     DISPLAY 'Nom de la scène :'
-                     ACCEPT frep_nomSce
-                     DISPLAY 'Année édition :'
-                     ACCEPT frep_dateA
-                     DISPLAY 'Jour :'
-                     ACCEPT frep_jour
-                     DISPLAY 'Heure :'
-                     ACCEPT frep_heureDebut
+             DISPLAY 'Indiquer le nom de la scène : '
+             WITH NO ADVANCING
+             ACCEPT frep_nomSce
+             DISPLAY 'Indiquer l''édition : '
+             WITH NO ADVANCING
+             ACCEPT frep_dateA
+             DISPLAY 'Indiquer le jour de représentation : '
+             WITH NO ADVANCING
+             ACCEPT frep_jour
+             DISPLAY 'Indiquer l''heure de représentation : '
+             WITH NO ADVANCING
+             ACCEPT frep_heureDebut
               READ frepresentations
              INVALID KEY
                DISPLAY 'La représentation n existe pas'
              NOT INVALID KEY
-                PERFORM WITH TEST AFTER UNTIL WchoixModifReserv < 1
+                PERFORM WITH TEST AFTER UNTIL choixModifReserv < 1
                    DISPLAY ' _____* Modification représentation *____'
                    DISPLAY '| Quitter                   :           0|'
                    DISPLAY '| Le jour                   :           1|'
@@ -1462,11 +1527,12 @@ PROCEDURE DIVISION.
                    DISPLAY '| Le nombre de personne max :           5|'
                    DISPLAY '|________________________________________|'
                    DISPLAY 'Faites un choix : ' WITH NO ADVANCING
-                   ACCEPT  WchoixModifReserv
-                   EVALUATE  WchoixModifReserv
+                   ACCEPT  choixModifReserv
+                   EVALUATE  choixModifReserv
                    WHEN 1 
                       PERFORM WITH TEST AFTER UNTIL frep_jour >= 01 AND frep_jour <= 03
-                         DISPLAY 'Donnez un jour (01, 02, 03)'
+                         DISPLAY 'Indiquer le jour (1, 2, 3) : '
+                         WITH NO ADVANCING
                          ACCEPT frep_jour
                          REWRITE frepTampon 
                             INVALID KEY 
@@ -1479,7 +1545,8 @@ PROCEDURE DIVISION.
                       PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0000 
                        AND frep_heureDebut <2400
                        DISPLAY frep_heureDebut
-                         DISPLAY 'Donnez une heure au format (HHMM)'
+                         DISPLAY 'Indiquer l''heure de début (HHMM) :'
+                         WITH NO ADVANCING
                          ACCEPT frep_heureDebut
                          DISPLAY frep_nomSce
                          DISPLAY frep_dateA
@@ -1495,7 +1562,8 @@ PROCEDURE DIVISION.
                    WHEN 3 
                      MOVE 0 TO Wtrouve
                      PERFORM WITH TEST AFTER UNTIL Wtrouve = 0
-                            DISPLAY 'Donnez le nom du groupe'
+                      DISPLAY 'Indiquer le nom du groupe : '
+                      WITH NO ADVANCING
                             ACCEPT frep_nomGr
                      PERFORM VERIF_NOM_GROUPE
                      END-PERFORM
@@ -1504,7 +1572,8 @@ PROCEDURE DIVISION.
                       END-PERFORM
                     WHEN 5 
                       PERFORM WITH TEST AFTER UNTIL frep_nbPersonneMax > 0
-                         DISPLAY 'Donnez le nouveau cachet'
+                         DISPLAY 'Indiquer le nouveau cachet : '
+                         WITH NO ADVANCING
                          ACCEPT frep_nbPersonneMax
                          REWRITE frepTampon END-REWRITE
                       END-PERFORM
@@ -1519,12 +1588,13 @@ PROCEDURE DIVISION.
            PERFORM WITH TEST AFTER UNTIL choix = 0
              PERFORM WITH TEST AFTER UNTIL choix < 9
               DISPLAY " _______* Menu gestion des scènes *_______ "
+              DISPLAY '|Quitter                  :              0|'
               DISPLAY "|Ajouter scene            :              1|"
               DISPLAY "|Afficher scene / edition :              2|"
               DISPLAY "|Supprimer scene          :              3|"
               DISPLAY "|Mofifier scene           :              4|"
               DISPLAY "|_________________________________________|"
-
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
        
               EVALUATE choix
@@ -1572,27 +1642,19 @@ PROCEDURE DIVISION.
               *> On initialise les variables temporaires
               MOVE fs_dateA TO fe_dateA
               MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
               MOVE 0 TO WCouTemp
 
               *> On met a jour le nombre de  scene + le res de l'edition
               *> Et le cout moyen 
               MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
-              *> On enlève le cout de la nouvelle scene  
+              MOVE fe_coutScenes TO WCouTemp
+              *> On enlève le cout de la scene  
               COMPUTE WCouTemp = WCouTemp - fs_cout END-COMPUTE
               *> On décrémente le nombre de scene 
               COMPUTE WnbScene = WnbScene - 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp + fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
+     
               MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
+              MOVE WCouTemp TO fe_coutScenes
 
               REWRITE fedTampon
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
@@ -1647,11 +1709,11 @@ PROCEDURE DIVISION.
            MOVE 1 TO choix 
            PERFORM WITH TEST AFTER UNTIL choix= 0
               DISPLAY " ________* Modification scènes *__________"
-              DISPLAY "|Annuler              :                  0|"
+              DISPLAY '|Revenir au menu principal :             0| '
               DISPLAY "|Modifier capicité    :                  1|"
               DISPLAY "|Modifier cout        :                  2|"
               DISPLAY "|_________________________________________|"
-
+              DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choix
        
               EVALUATE choix
@@ -1675,7 +1737,6 @@ PROCEDURE DIVISION.
 
 
        AFFICHER_SCENES.
-       DISPLAY '_________________________________________'
        DISPLAY 'Nom:      : ' ,fs_nomSce
        DISPLAY 'Année     : ' ,fs_dateA
        DISPLAY 'capcicité : ' ,fs_capacite
@@ -1694,69 +1755,27 @@ PROCEDURE DIVISION.
              READ feditions
              *> On enlève la scene dans les statistiques 
              
-             *> Si la scene existe et n'a pas de représentation programmé 
               *> On initialise les variables temporaires
-              MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
               MOVE 0 TO WCouTemp
 
-              *> On met a jour le nombre de  scene + le res de l'edition
-              *> Et le cout moyen 
-              MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
-              *> On enlève le cout de la nouvelle scene  
+              *> On met a jour le cout total scene 
+              MOVE fe_coutScenes TO WCouTemp
+              *> On enlève l'ancien cout de la  scene  
               COMPUTE WCouTemp = WCouTemp - fs_cout END-COMPUTE
-              *> On décrémente le nombre de scene 
-              COMPUTE WnbScene = WnbScene - 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp + fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
-              MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
-              
-              REWRITE fedTampon
-              INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
-              NOT INVALID KEY DISPLAY 'Edition mise à jour'
-              END-REWRITE
-
+        
               MOVE 0 TO fs_cout
               PERFORM WITH TEST AFTER UNTIL fs_cout > 0
               DISPLAY 'Saisir un cout supérieure à 0'
              ACCEPT fs_cout
-               END-PERFORM
+              END-PERFORM
 
               MOVE fs_dateA TO fs_dateA
               READ feditions
 
-                 *> On initialise les variables temporaires
-              MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
-              MOVE 0 TO WCouTemp
+              COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE 
 
-              *> On met a jour le nombre de  scene + le res de l'edition
-              *> Et le cout moyen 
-              MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
-              *> On ajoute le cout de la nouvelle scene  
-              COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE
-              *> On augmente le nombre de scene 
-              COMPUTE WnbScene = WnbScene + 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp - fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
-              MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
-
+              MOVE WCouTemp TO fe_coutScenes
+     
               REWRITE fedTampon
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
               NOT INVALID KEY DISPLAY 'Edition mise à jour'
@@ -1797,7 +1816,7 @@ PROCEDURE DIVISION.
             ACCEPT fs_capacite
            END-PERFORM.    
 
-          .
+          
 
 
 
@@ -1824,16 +1843,19 @@ PROCEDURE DIVISION.
        *> Sur le cout moyen d'une scene 
        *> Sur le resultat du festival 
        AJOUT_SCENES.
+       DISPLAY '____________* Ajout d''une scène *________'.
        MOVE 0 TO Wtrouve 
        OPEN I-O feditions 
-       DISPLAY "Saisir l'année"
+       DISPLAY "Indiquer l''édition : "
+       WITH NO ADVANCING
        ACCEPT fe_dateA
        PERFORM VERIF_EDITION
       *> Si on a trouver l'edition 
        IF Wtrouve = 1
         MOVE 0 TO Wtrouve
         OPEN I-O fscenes
-        DISPLAY "Saisir le nom de la scène"
+        DISPLAY "Indiquer le nom de la scène : "
+        WITH NO ADVANCING
         ACCEPT fs_nomSce
         MOVE fe_dateA TO fs_dateA
         PERFORM VERIF_SCENES
@@ -1850,27 +1872,21 @@ PROCEDURE DIVISION.
             NOT INVALID KEY DISPLAY 'Scene enregistré'
               *> On initialise les variables temporaires
               MOVE 0 TO WnbScene
-              MOVE 0 TO WResTemp
               MOVE 0 TO WCouTemp
+          
 
               *> On met a jour le nombre de  scene + le res de l'edition
               *> Et le cout moyen 
               MOVE fe_nbScene TO WnbScene
-              MOVE fe_resultat TO WResTemp
-              *> On calcul le cout total avant ajout 
-              COMPUTE WCouTemp = fe_coutMoyenScene * WnbScene END-COMPUTE
+              MOVE fe_coutScenes TO WCouTemp
+  
               *> On ajoute le cout de la nouvelle scene  
               COMPUTE WCouTemp = WCouTemp + fs_cout END-COMPUTE
               *> On augmente le nombre de scene 
               COMPUTE WnbScene = WnbScene + 1 END-COMPUTE 
-              *> On recalcul la moyenne 
-              COMPUTE WCouTemp =  WCouTemp / WnbScene END-COMPUTE
-              *> On met à jour le resultat du festival
-              COMPUTE WResTemp = WResTemp - fs_cout END-COMPUTE 
-
-              MOVE WResTemp TO fe_resultat
+     
+              MOVE WCouTemp TO fe_coutScenes
               MOVE WnbScene TO fe_nbScene
-              MOVE WCouTemp TO fe_coutMoyenScene
 
               REWRITE fedTampon
               INVALID KEY DISPLAY 'Erreur lors de la mise à jour d''édition'
@@ -1896,10 +1912,11 @@ PROCEDURE DIVISION.
          
        AFFICHER_SCENES_ANNEE.
        MOVE 0 TO WFin
-       DISPLAY 'Saisir l''année de l''édition' 
+       DISPLAY 'Indiquer l''édition : '
 
        PERFORM WITH TEST AFTER UNTIL fs_dateA > 1000
-          DISPLAY 'Saisir Annee au format YYYY ' 
+          DISPLAY 'Indiquer l''année (YYYY) : '
+          WITH NO ADVANCING 
           ACCEPT fs_dateA
        END-PERFORM  
 
@@ -1950,6 +1967,7 @@ PROCEDURE DIVISION.
            DISPLAY " |Afficher cout des artistes :           7|"
            DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
+           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
            ACCEPT choix
            EVALUATE choix
              WHEN 1 PERFORM AFFICHER_EDITIONS
@@ -1987,9 +2005,9 @@ PROCEDURE DIVISION.
              DISPLAY "Nombre de réservation jour 1 : ",fe_nbResaJourUn
              DISPLAY "Nombre de réservation jour 2 : ",fe_nbResaJourDeux
              DISPLAY "Nombre de réservation jour 2 : ",fe_nbResaJourTrois
-             DISPLAY "Résultat final : ",fe_resultat," euros"
-             DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
-             DISPLAY "Cachet moyen : ",fe_coutArtistes.
+             DISPLAY "Benefice final : ",fe_Ca," euros"
+             DISPLAY "Coût total des scènes  : ",fe_coutScenes
+             DISPLAY "Coût total des artistes : ",fe_coutArtistes.
 
 
 
@@ -2001,13 +2019,13 @@ PROCEDURE DIVISION.
        MOVE 0 TO Wtrouve
        DISPLAY "Veuillez renseigner les informations suivantes :"
        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-         DISPLAY "Indiquez l'annee de l'édition : " WITH NO ADVANCING
+         DISPLAY "Indiquer l'annee de l'édition : " WITH NO ADVANCING
          ACCEPT fe_dateA
          READ feditions
          INVALID KEY
            PERFORM WITH TEST AFTER UNTIL fe_capacite IS NUMERIC AND
        fe_capacite > 0 
-             DISPLAY "Indiquez la capacité de l'édition : " WITH NO 
+             DISPLAY "Indiquer la capacité de l'édition : " WITH NO 
         ADVANCING
              ACCEPT fe_capacite
            END-PERFORM
@@ -2017,8 +2035,8 @@ PROCEDURE DIVISION.
            MOVE 0 TO fe_nbResaJourUn
            MOVE 0 TO fe_nbResaJourDeux
            MOVE 0 TO fe_nbResaJourTrois
-           MOVE 0 TO fe_resultat
-           MOVE 0 TO fe_coutMoyenScene
+           MOVE 0 TO fe_Ca
+           MOVE 0 TO fe_coutScenes
            MOVE 0 TO fe_coutArtistes
            MOVE fe_dateA TO fp_dateA
            PERFORM GENERER_PASS
@@ -2082,7 +2100,7 @@ PROCEDURE DIVISION.
            DISPLAY "Résas jour 2 : ",fe_nbResaJourDeux
            DISPLAY "Résas jour 3 : ",fe_nbResaJourTrois
            DISPLAY "Résultat de l'édition : ",fe_resultat
-           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+           DISPLAY "Coût moyen d'une scène : ",fe_coutScenes
            DISPLAY "Coût moyen d'un artiste : ",fe_coutArtistes
 
            PERFORM AFFICHER_EDITION
@@ -2116,7 +2134,7 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'éditions à cette date."
          NOT INVALID KEY
-           DISPLAY "Reslutat : ",fe_resultat
+           DISPLAY "Chiffre d''affaires : ",fe_Ca
        END-READ
        CLOSE feditions.
 
@@ -2130,7 +2148,8 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'éditions à cette date."
          NOT INVALID KEY
-           DISPLAY "Coût moyen d'une scène : ",fe_coutMoyenScene
+           DISPLAY "Coût moyen d'une scène : ", 
+           DIVIDE fe_coutScenes BY fe_nbScene GIVING WcoutMoyenA END-DIVIDE
        END-READ
        CLOSE feditions.
 
@@ -2198,7 +2217,7 @@ PROCEDURE DIVISION.
          INVALID KEY
            DISPLAY "Pas d'éditions à cette date."
          NOT INVALID KEY
-           DISPLAY "Coût moyen des artistes : ",fe_coutArtistes
+           DISPLAY "Coût total des artistes : ",fe_coutArtistes
        END-READ
        CLOSE feditions.
 
@@ -2504,9 +2523,10 @@ PROCEDURE DIVISION.
              MOVE 3 TO fe_nbResaJourDeux
              MOVE 3 TO fe_nbResaJourTrois
              MOVE 450 TO fe_resultat
-             MOVE 12000 TO fe_coutMoyenScene
-             MOVE 18000 TO fe_coutArtistes
+             MOVE 12000 TO fe_coutScenes
+             MOVE 72000 TO fe_coutArtistes
              MOVE 6 TO fe_nbRepresentations
+             MOVE 570 TO fe_Ca
              WRITE frepTampon END-WRITE
 
              MOVE 2016 TO fe_dateA
@@ -2516,9 +2536,10 @@ PROCEDURE DIVISION.
              MOVE 19 TO fe_nbResaJourDeux
              MOVE 2 TO fe_nbResaJourTrois
              MOVE 450 TO fe_resultat
-             MOVE 2000 TO fe_coutMoyenScene
+             MOVE 2000 TO fe_coutScenes
              MOVE 72000 TO fe_coutArtistes
              MOVE 6 TO fe_nbRepresentations
+             MOVE 12000 TO fe_Ca
              WRITE frepTampon END-WRITE
 
              MOVE 2015 TO fe_dateA
@@ -2528,9 +2549,10 @@ PROCEDURE DIVISION.
              MOVE 0 TO fe_nbResaJourDeux
              MOVE 0 TO fe_nbResaJourTrois
              MOVE 450 TO fe_resultat
-             MOVE 2000 TO fe_coutMoyenScene
+             MOVE 2000 TO fe_coutScenes
              MOVE 72000 TO fe_coutArtistes
              MOVE 6 TO fe_nbRepresentations
+             MOVE 0 TO fe_Ca
              WRITE frepTampon END-WRITE
 
              MOVE 1 TO fp_nomPa
