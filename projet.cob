@@ -351,8 +351,8 @@ PROCEDURE DIVISION.
 
        IF Wconnect = 1 
       *> Menu gestionnaire 
-       PERFORM WITH TEST BEFORE UNTIL choixMenu=0 AND Wconnect = 0
-         PERFORM WITH TEST BEFORE UNTIL choixMenu<9 AND Wconnect = 0  
+       PERFORM WITH TEST AFTER UNTIL choixMenu=0 OR Wconnect = 0
+         PERFORM WITH TEST AFTER UNTIL choixMenu<9  OR Wconnect = 0
               DISPLAY ' |   Connecté en tant que : ', fu_id   
 
               DISPLAY '  ___________* Menu gestionnaire *________'
@@ -364,7 +364,8 @@ PROCEDURE DIVISION.
               DISPLAY ' |Gestion des scènes          :          5|'
               DISPLAY ' |Gestion des éditions        :          6|'
               DISPLAY ' |Gestion des utilisateurs    :          7|'
-              DISPLAY ' |Reset du jeu de données     :          8|'
+              DISPLAY ' |Déconnexion                 :          8|'
+              DISPLAY ' |Reset du jeu de données     :          9|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
               ACCEPT choixMenu
@@ -376,7 +377,8 @@ PROCEDURE DIVISION.
                WHEN 5 PERFORM GESTION_SCENES
                WHEN 6 PERFORM GESTION_EDITIONS
                WHEN 7 PERFORM GESTION_USERS
-               WHEN 8 PERFORM RESET_DONNEES
+               WHEN 8 PERFORM DECONNEXION_USER
+               WHEN 9 PERFORM RESET_DONNEES
               END-EVALUATE
          END-PERFORM
        END-PERFORM
@@ -399,8 +401,8 @@ PROCEDURE DIVISION.
 
        *> Gestion des utilisateur 
         GESTION_USERS. 
-        PERFORM WITH TEST AFTER UNTIL WchoixCo=0 
-          PERFORM WITH TEST AFTER UNTIL WchoixCo<9     
+        PERFORM WITH TEST AFTER UNTIL WchoixCo=0 OR Wconnect = 0
+          PERFORM WITH TEST AFTER UNTIL WchoixCo<9 OR Wconnect = 0   
             IF Wconnect = 1
             DISPLAY ' |   Connecté en tant que : ', fu_id  
             END-IF                               
@@ -420,7 +422,7 @@ PROCEDURE DIVISION.
             EVALUATE WchoixCo
             WHEN 1 PERFORM CONNEXION_USER
             WHEN 2 PERFORM AJOUTER_USER
-            WHEN 3 PERFORM DECONNEXION 
+            WHEN 3 PERFORM DECONNEXION_USER 
             WHEN 4 PERFORM PASSWORD_USER
             END-EVALUATE
           END-PERFORM
@@ -443,7 +445,7 @@ PROCEDURE DIVISION.
         CONNEXION_USER. 
         IF Wconnect = 1 
          DISPLAY "Déconnection de l'utilisateur : " , fu_id
-         PERFORM DECONNEXION
+         PERFORM DECONNEXION_USER
         END-IF 
 
         OPEN I-O fusers 
@@ -462,16 +464,17 @@ PROCEDURE DIVISION.
          END-IF 
         ELSE 
          DISPLAY "Nom d'utilisateur inconnu"
+         CLOSE fusers
         END-IF.
 
-        DECONNEXION. 
+        DECONNEXION_USER. 
          MOVE 0 TO Wconnect
          MOVE 0 TO fu_ad
         CLOSE fusers.
 
         AJOUTER_USER. 
         IF Wconnect = 1 AND fu_ad =1
-         PERFORM DECONNEXION
+         PERFORM DECONNEXION_USER
          OPEN I-O fusers
          DISPLAY "Saisir votre nom d'utilisateur" 
          ACCEPT fu_id
@@ -894,8 +897,9 @@ PROCEDURE DIVISION.
        RECHERCHE_RESERVATION_EDITION.
               OPEN I-O freservations 
               MOVE 0 TO Wfin
-              DISPLAY 'Indiquer l''édition : '
-              WITH NO ADVANCING
+              DISPLAY "Choisissez l'édition : "
+              PERFORM AFFICHAGE_ANNEES_EDITIONS
+              DISPLAY "Edition : " WITH NO ADVANCING
               ACCEPT fres_dateA 
               MOVE fres_dateA  TO dateA
               START freservations, KEY = fres_dateA
@@ -1487,7 +1491,8 @@ PROCEDURE DIVISION.
         MOVE 0 TO Wtrouve
         PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
         DISPLAY 'Indiquer l''édition de la représentation : '
-        WITH NO ADVANCING
+        PERFORM AFFICHAGE_ANNEES_EDITIONS
+        DISPLAY "Editions : " WITH NO ADVANCING
         ACCEPT fe_dateA
         OPEN I-O feditions 
           PERFORM VERIF_EDITION
@@ -1649,6 +1654,7 @@ PROCEDURE DIVISION.
         AFFICHER_PROGRAMMATION.
           OPEN INPUT frepresentations                     
           MOVE 1 TO Wcount   
+          PERFORM AFFICHAGE_ANNEES_EDITIONS
           DISPLAY 'Indiquer l''édition : '
           WITH NO ADVANCING
           ACCEPT frep_dateA 
@@ -2083,10 +2089,11 @@ PROCEDURE DIVISION.
        *> Sur le resultat du festival 
        AJOUT_SCENES.
        DISPLAY '____________* Ajout d''une scène *________'.
-       MOVE 0 TO Wtrouve 
-       OPEN I-O feditions 
+       MOVE 0 TO Wtrouve  
        DISPLAY "Indiquer l''édition : "
-       WITH NO ADVANCING
+       PERFORM AFFICHAGE_ANNEES_EDITIONS
+       OPEN I-O feditions
+       DISPLAY "Edition : " WITH NO ADVANCING
        ACCEPT fe_dateA
        PERFORM VERIF_EDITION
       *> Si on a trouver l'edition 
@@ -2370,6 +2377,8 @@ PROCEDURE DIVISION.
       *>Statistiques
        NB_ARTISTE_EDITION.
         DISPLAY 'Année ?'
+        PERFORM AFFICHAGE_ANNEES_EDITIONS
+        DISPLAY "Edition : " WITH NO ADVANCING
         ACCEPT fe_dateA
         OPEN INPUT feditions 
        READ feditions
@@ -2597,6 +2606,7 @@ PROCEDURE DIVISION.
              MOVE "Francis Cabrel" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 1 TO frep_jour
@@ -2605,6 +2615,7 @@ PROCEDURE DIVISION.
              MOVE "Lady gaga" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2 TO frep_jour
@@ -2613,6 +2624,7 @@ PROCEDURE DIVISION.
              MOVE "Rolling Stones" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2 TO frep_jour
@@ -2621,6 +2633,7 @@ PROCEDURE DIVISION.
              MOVE "Jamiroquai" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 3 TO frep_jour
@@ -2629,6 +2642,7 @@ PROCEDURE DIVISION.
              MOVE "Airbourne" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 3 TO frep_jour
@@ -2637,6 +2651,7 @@ PROCEDURE DIVISION.
              MOVE "Lamb of god" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 1 TO frep_jour
@@ -2645,6 +2660,7 @@ PROCEDURE DIVISION.
              MOVE "Justin Bieber" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 1 TO frep_jour
@@ -2653,6 +2669,7 @@ PROCEDURE DIVISION.
              MOVE "Gorgoroth" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2 TO frep_jour
@@ -2661,6 +2678,7 @@ PROCEDURE DIVISION.
              MOVE "Foo Fighters" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2 TO frep_jour
@@ -2669,6 +2687,7 @@ PROCEDURE DIVISION.
              MOVE "Nirvana" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 26 TO frep_nbPersonneMax
+             MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 3 TO frep_jour
@@ -2677,6 +2696,7 @@ PROCEDURE DIVISION.
              MOVE "Casimir" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 3 TO frep_jour
@@ -2685,6 +2705,7 @@ PROCEDURE DIVISION.
              MOVE "Black Keys" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 32 TO frep_nbPersonneMax
+             MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 1 TO frep_jour
@@ -2693,6 +2714,7 @@ PROCEDURE DIVISION.
              MOVE "Noisebends" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 1 TO frep_jour
@@ -2701,6 +2723,7 @@ PROCEDURE DIVISION.
              MOVE "Soviet Suprem" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 25 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2 TO frep_jour
@@ -2709,6 +2732,7 @@ PROCEDURE DIVISION.
              MOVE "Queens of the Stone Age" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 56 TO frep_nbPersonneMax
+             MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2 TO frep_jour
@@ -2717,6 +2741,7 @@ PROCEDURE DIVISION.
              MOVE "Zuchero" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 3 TO frep_jour
@@ -2725,6 +2750,7 @@ PROCEDURE DIVISION.
              MOVE "Meshuggah" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 30 TO frep_nbPersonneMax
+             MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 3 TO frep_jour
@@ -2733,6 +2759,7 @@ PROCEDURE DIVISION.
              MOVE "Francis Cabrel" TO frep_nomGr
              MOVE 12000 TO frep_cachet
              MOVE 49 TO frep_nbPersonneMax
+             MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
              MOVE 2015 TO fe_dateA
