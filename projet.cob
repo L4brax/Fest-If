@@ -162,7 +162,9 @@ FILE SECTION.
           02 fe_coutScenes PIC 9(30). 
           02 fe_coutArtistes PIC 9(30).
           02 fe_nbRepresentations PIC 9(2).       
-          02 fe_Ca PIC S9(30).                  
+          02 fe_Ca PIC S9(30).          
+
+
 
 
 WORKING-STORAGE SECTION.
@@ -204,7 +206,6 @@ WORKING-STORAGE SECTION.
         77 Wtrouve   PIC 9(1).
         77 Wprix     PIC 9(4).
         77 Wcpt      PIC 9.
-        77 WanActu   PIC 9(4).
         77 Wsaisie   PIC A.
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
@@ -250,6 +251,13 @@ WORKING-STORAGE SECTION.
         77 nbArtisteN PIC 9(3).
         77 nbMoyArtiste PIC 999v99.
         77 nbEdition PIC 9(3).
+
+        *> Format date  
+        01 DateActuelle.
+         02  AnActu     PIC 9(4).
+         02  MoisActu   PIC 99.
+         02  JourActu   PIC 99.     
+
 
 PROCEDURE DIVISION.
 
@@ -324,15 +332,18 @@ PROCEDURE DIVISION.
        END-IF
 
       *> Mise à jour des variables de connection en cas d'arrêt brutal 
-       MOVE 0 TO WchoixCo 
-       MOVE 0 TO Wconnect 
+       MOVE 0 TO WchoixCo
+       MOVE 0 TO Wconnect
+      *> On met à jour la date 
+       MOVE FUNCTION CURRENT-DATE TO DateActuelle  
 
-
+       DISPLAY AnActu
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
         PERFORM WITH TEST AFTER UNTIL choixMenu<9  
       *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
-       
-          MOVE 2016 TO WanActu
+ 
+        MOVE AnActu TO fp_dateA    
+
       *> Menu festivallier 
           DISPLAY "  ______________* Bienvenue *_____________" 
           DISPLAY ' |Quitter le programme        :          0|'        
@@ -603,7 +614,7 @@ PROCEDURE DIVISION.
                 WITH NO ADVANCING
                 ACCEPT fres_dateA
               ELSE 
-                MOVE WanActu TO fres_dateA
+                MOVE AnActu TO fres_dateA
               END-IF
               MOVE fres_dateA TO fp_dateA
               DISPLAY 'Voulez-afficher la liste des pass ainsi que'
@@ -1767,7 +1778,7 @@ PROCEDURE DIVISION.
             WITH NO ADVANCING
             ACCEPT frep_dateA 
           ELSE 
-            MOVE WanActu TO frep_dateA
+            MOVE AnActu TO frep_dateA
           END-IF
           MOVE frep_dateA TO dateA
           PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
@@ -2716,7 +2727,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Francis Cabrel" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2725,7 +2736,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Lady gaga" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2734,7 +2745,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Rolling Stones" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2743,7 +2754,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Jamiroquai" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2752,7 +2763,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Airbourne" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2761,7 +2772,7 @@ PROCEDURE DIVISION.
              MOVE 2015 TO frep_dateA
              MOVE "Lamb of god" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2770,7 +2781,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Justin Bieber" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 1 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2779,7 +2790,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Gorgoroth" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2788,7 +2799,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Foo Fighters" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2797,7 +2808,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Nirvana" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 26 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2806,7 +2817,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Casimir" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 1 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2815,7 +2826,7 @@ PROCEDURE DIVISION.
              MOVE 2016 TO frep_dateA
              MOVE "Black Keys" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 32 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2824,7 +2835,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Noisebends" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2833,7 +2844,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Soviet Suprem" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 25 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2842,7 +2853,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Queens of the Stone Age" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 56 TO frep_nbPersonneMax
+             MOVE 6 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2851,7 +2862,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Zuchero" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneC" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2860,7 +2871,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Meshuggah" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 30 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneA" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
@@ -2869,7 +2880,7 @@ PROCEDURE DIVISION.
              MOVE 2017 TO frep_dateA
              MOVE "Francis Cabrel" TO frep_nomGr
              MOVE 12000 TO frep_cachet
-             MOVE 49 TO frep_nbPersonneMax
+             MOVE 5 TO frep_nbPersonneMax
              MOVE "ScèneB" TO frep_nomSce
              WRITE frepTampon END-WRITE
 
