@@ -89,7 +89,7 @@ FILE SECTION.
 
         FD fincrements. 
         01 finTampon.
-          02 fi_idResa PIC 9(36).
+          02 fi_idResa PIC 9(5).
 
         FD fscenes.
         01 fscTampon.
@@ -328,7 +328,7 @@ PROCEDURE DIVISION.
 
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
         PERFORM WITH TEST AFTER UNTIL choixMenu<9  
-        *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
+      *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
        
 
       *> Menu festivallier 
@@ -342,17 +342,17 @@ PROCEDURE DIVISION.
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
           ACCEPT choixMenu
            EVALUATE choixMenu
-             WHEN 1  DISPLAY AFFICHER_PROGRAMMATION 
-             WHEN 2  DISPLAY PERFORM AFFICHER_PASS_EDITION
-             WHEN 3  DISPLAY PERFORM AJOUTER_RESERVATION
+             WHEN 1 PERFORM AFFICHER_PROGRAMMATION 
+             WHEN 2 PERFORM AFFICHER_PASS_EDITION
+             WHEN 3 PERFORM AJOUTER_RESERVATION
              WHEN 4 PERFORM CONNEXION_USER
            END-EVALUATE
     
 
        IF Wconnect = 1 
       *> Menu gestionnaire 
-       PERFORM WITH TEST AFTER UNTIL choixMenu=0 
-         PERFORM WITH TEST AFTER UNTIL choixMenu<9   
+       PERFORM WITH TEST BEFORE UNTIL choixMenu=0 AND Wconnect = 0
+         PERFORM WITH TEST BEFORE UNTIL choixMenu<9 AND Wconnect = 0  
               DISPLAY ' |   Connecté en tant que : ', fu_id   
 
               DISPLAY '  ___________* Menu gestionnaire *________'
@@ -1760,7 +1760,7 @@ PROCEDURE DIVISION.
                    DISPLAY ' _____* Modification représentation *____'
                    DISPLAY '| Quitter                   :           0|'
                    DISPLAY '| Le jour                   :           1|'
-                   DISPLAY '| Heure de début            :           2|'      
+                   DISPLAY '| Heure de début            :           2|' 
                    DISPLAY '| Le nom du groupe          :           3|'
                    DISPLAY '| Le cachet                 :           4|'
                    DISPLAY '| Le nombre de personne max :           5|'
@@ -2258,8 +2258,10 @@ PROCEDURE DIVISION.
        MOVE 0 TO Wtrouve
        DISPLAY "Veuillez renseigner les informations suivantes :"
        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-         DISPLAY "Indiquer l'annee de l'édition : " WITH NO ADVANCING
-         ACCEPT fe_dateA
+         PERFORM WITH TEST AFTER UNTIL fe_dateA > 2015 AND fe_dateA < 2040
+           DISPLAY "Indiquer l'annee de l'édition : " WITH NO ADVANCING
+           ACCEPT fe_dateA
+         END-PERFORM
          READ feditions
          INVALID KEY
            PERFORM WITH TEST AFTER UNTIL fe_capacite IS NUMERIC AND
@@ -2293,7 +2295,10 @@ PROCEDURE DIVISION.
        PERFORM AFFICHAGE_ANNEES_EDITIONS
        OPEN I-O feditions
        PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
-         ACCEPT fe_dateA
+         PERFORM WITH TEST AFTER UNTIL fe_dateA > 2015 AND fe_dateA < 2040
+           DISPLAY "Edition : " WITH NO ADVANCING
+           ACCEPT fe_dateA
+         END-PERFORM
          READ feditions
          INVALID KEY
            DISPLAY "Aucune édition à cette date."
@@ -2440,10 +2445,10 @@ PROCEDURE DIVISION.
        DISPLAY "Vous désirez créer un nouveau jeu de données."
        DISPLAY "Attention, cette action supprimera toutes les données de"
        DISPLAY "tous les fichiers et les remplacera par des nouvelles."
-       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017.
-       DSIPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
+       DISPLAY "Pour info : ce nouveau jeu de données contient 3 éditions : 2015, 2016 et 2017."
+       DISPLAY "Le jour 1 de l'édition 2016 est complet, soit 20 résas,"
        DISPLAY "Le jour 2 comprend 19 résas, soit une seule restante"
-       DISPLAY "Le jour 3, seulement une résa.
+       DISPLAY "Le jour 3, seulement une résa."
        DISPLAY "Etes-vous sur ? :"
        DISPLAY " 1 - Oui"
        DISPLAY " 2 - Non"       
@@ -2741,7 +2746,7 @@ PROCEDURE DIVISION.
              MOVE 72000 TO fe_coutArtistes
              MOVE 6 TO fe_nbRepresentations
              MOVE 570 TO fe_Ca
-             WRITE frepTampon END-WRITE
+             WRITE fedTampon END-WRITE
 
              MOVE 2016 TO fe_dateA
              MOVE 20 TO fe_capacite
@@ -2754,7 +2759,7 @@ PROCEDURE DIVISION.
              MOVE 72000 TO fe_coutArtistes
              MOVE 6 TO fe_nbRepresentations
              MOVE 12000 TO fe_Ca
-             WRITE frepTampon END-WRITE
+             WRITE fedTampon END-WRITE
 
              MOVE 2015 TO fe_dateA
              MOVE 30 TO fe_capacite
@@ -2767,7 +2772,7 @@ PROCEDURE DIVISION.
              MOVE 72000 TO fe_coutArtistes
              MOVE 6 TO fe_nbRepresentations
              MOVE 0 TO fe_Ca
-             WRITE frepTampon END-WRITE
+             WRITE fedTampon END-WRITE
 
              MOVE 1 TO fp_nomPa
              MOVE 2015 TO fp_dateA
