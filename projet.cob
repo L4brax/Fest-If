@@ -1957,14 +1957,13 @@ PROCEDURE DIVISION.
        GESTION_EDITIONS.
        PERFORM WITH TEST AFTER UNTIL choix=0
          PERFORM WITH TEST AFTER UNTIL choix<9                 
-           DISPLAY "  _______________* Menu *_________________"
+           DISPLAY "  _______________* Menu *_________________ "
            DISPLAY " |Afficher les éditions :                1|"
            DISPLAY " |Ajout d'une éditions :                 2|"
            DISPLAY " |Modifier la capacité d'une édition :   3|"
-           DISPLAY " |Supprimer une édition :                4|"
-           DISPLAY " |Afficher le résultat d'une édition :   5|"
-           DISPLAY " |Afficher le cout des scènes :          6|"
-           DISPLAY " |Afficher cout des artistes :           7|"
+           DISPLAY " |Afficher le résultat d'une édition :   4|"
+           DISPLAY " |Afficher le cout des scènes :          5|"
+           DISPLAY " |Afficher cout des artistes :           6|"
            DISPLAY " |Quitter :                              0|"
            DISPLAY " |________________________________________|"
            DISPLAY 'Faites un choix : ' WITH NO ADVANCING
@@ -1973,10 +1972,9 @@ PROCEDURE DIVISION.
              WHEN 1 PERFORM AFFICHER_EDITIONS
              WHEN 2 PERFORM AJOUT_EDITIONS
              WHEN 3 PERFORM MODIFIER_CAPACITE
-             WHEN 4 PERFORM SUPPRIMER_EDITION
-             WHEN 5 PERFORM AFFICHAGE_RESULTAT_EDITION
-             WHEN 6 PERFORM AFFICHAGE_COUT_SCENES
-             WHEN 7 PERFORM AFFICHAGE_COUT_ARTISTES
+             WHEN 4 PERFORM AFFICHAGE_RESULTAT_EDITION
+             WHEN 5 PERFORM AFFICHAGE_COUT_SCENES
+             WHEN 6 PERFORM AFFICHAGE_COUT_ARTISTES
            END-EVALUATE
          END-PERFORM
        END-PERFORM.
@@ -2080,36 +2078,6 @@ PROCEDURE DIVISION.
        NOT INVALID KEY
          MOVE 1 TO Wtrouve
        END-READ.
-
-       SUPPRIMER_EDITION.
-       DISPLAY "*********"
-       DISPLAY "Choisissez l'edition parmi la liste: "
-       PERFORM AFFICHAGE_ANNEES_EDITIONS
-       OPEN I-O feditions
-         ACCEPT fe_dateA
-         READ feditions
-         INVALID KEY
-           DISPLAY "Pas d'édition correspondante."
-         NOT INVALID KEY
-
-           DISPLAY "Edition : ", fe_dateA
-           DISPLAY "Capacité : ", fe_capacite
-           DISPLAY "Nombre de scènes : ",fe_nbScene
-           DISPLAY "Nombre d'artistes : ",fe_nbArtiste
-           DISPLAY "Résas jour 1 : ",fe_nbResaJourUn
-           DISPLAY "Résas jour 2 : ",fe_nbResaJourDeux
-           DISPLAY "Résas jour 3 : ",fe_nbResaJourTrois
-           DISPLAY "Résultat de l'édition : ",fe_resultat
-           DISPLAY "Coût moyen d'une scène : ",fe_coutScenes
-           DISPLAY "Coût moyen d'un artiste : ",fe_coutArtistes
-
-           PERFORM AFFICHER_EDITION
-           MOVE fe_dateA TO fp_dateA
-           PERFORM SUPPRIMER_PASS_EDITION
-           DELETE feditions END-DELETE
-           DISPLAY "Cette édition a été supprimée"
-         END-READ
-       CLOSE feditions.
 
        AFFICHAGE_ANNEES_EDITIONS.
        OPEN I-O feditions 
@@ -2534,7 +2502,7 @@ PROCEDURE DIVISION.
              MOVE 6 TO fe_nbArtiste
              MOVE 20 TO fe_nbResaJourUn
              MOVE 19 TO fe_nbResaJourDeux
-             MOVE 2 TO fe_nbResaJourTrois
+             MOVE 1 TO fe_nbResaJourTrois
              MOVE 450 TO fe_resultat
              MOVE 2000 TO fe_coutScenes
              MOVE 72000 TO fe_coutArtistes
@@ -2644,7 +2612,503 @@ PROCEDURE DIVISION.
              MOVE 2017 TO fp_dateA
              MOVE 170 TO fp_prix
              WRITE fpassTampon END-WRITE
+       
+             MOVE 1 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
              
+             MOVE 2 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 3 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 4 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 5 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 6 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 7 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 8 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 9 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2015 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+
+
+
+
+
+
+             MOVE 1 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 2 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 3 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 4 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 5 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 6 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 7 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 8 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 9 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 10 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 11 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 12 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 13 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 14 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 15 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 16 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 17 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 18 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 19 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 20 TO fres_id
+             MOVE 1 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 21 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 22 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 23 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 24 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 25 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 26 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 27 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 28 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 29 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 30 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 31 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 32 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 33 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 39 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 34 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 35 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 36 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 37 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 38 TO fres_id
+             MOVE 2 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
+             MOVE 40 TO fres_id
+             MOVE 3 TO fres_nomPa
+             MOVE "Jean-Pascal-1" TO fres_prenom
+             MOVE 14000 TO fres_dep
+             MOVE 2016 TO fres_dateA
+             MOVE "adresse@mail.com" TO fres_adresseEmail
+             MOVE 0706050403 TO fres_numTel
+             MOVE 01011990 TO fres_dateNaissance
+             WRITE fresTampon END-WRITE
+
              CLOSE freservations
              CLOSE fpass
              CLOSE feditions
