@@ -47,6 +47,17 @@ FILE-CONTROL.
        ALTERNATE RECORD KEY IS frep_nomGr WITH DUPLICATES
        ALTERNATE RECORD KEY IS frep_nomSce WITH DUPLICATES.
 
+
+       SELECT frepresentationsTemp ASSIGN TO "representations.dat"
+       ORGANIZATION IS INDEXED
+       ACCESS IS dynamic
+       FILE STATUS IS frepTemp_stat
+       RECORD KEY IS frep_cleRepT
+       ALTERNATE RECORD KEY IS frep_dateAT WITH DUPLICATES
+       ALTERNATE RECORD KEY IS frep_nomGrT WITH DUPLICATES
+       ALTERNATE RECORD KEY IS frep_nomSceT WITH DUPLICATES.
+
+
        SELECT feditions ASSIGN TO "editions.dat"
        ORGANIZATION INDEXED
        ACCESS IS DYNAMIC
@@ -127,6 +138,17 @@ FILE SECTION.
           02 frep_cachet PIC S9(6).
           02 frep_nbPersonneMax PIC S9(30).
 
+        FD frepresentationsTemp.
+        01 frepTamponTemp.
+          02 frep_cleRepT. 
+            03 frep_jourT  PIC 9(2).
+            03 frep_heureDebutT PIC 9(4).
+            03 frep_dateAT PIC 9(4).
+            03 frep_nomSceT PIC A(30).
+          02 frep_nomGrT PIC A(30).
+          02 frep_cachetT PIC S9(9).
+          02 frep_nbPersonneMaxT PIC S9(30).
+
          FD feditions. 
          01 fedTampon. 
           02 fe_dateA PIC 9(4). 
@@ -184,7 +206,6 @@ WORKING-STORAGE SECTION.
         77 Wtrouve   PIC 9(1).
         77 Wprix     PIC 9(4).
         77 Wcpt      PIC 9.
-        77 Wsaisie   PIC A.
     	*>Variables groupe représentation
         77 nomGr PIC A(30).
         77 styleGr PIC A(30).
@@ -193,11 +214,6 @@ WORKING-STORAGE SECTION.
         77 nomDernier PIC A(30).
         77 styleDernier PIC A(30).
         77 choixModifReserv PIC 9(2).
-        77 minutes PIC 9(2).
-        77 jourRep PIC S9(2).
-        77 heureRep PIC S9(4).
-        77 dispoGr PIC 9.
-        77 anneRep PIC 9(4).
 
     	*>Variable scenes
       *>Variables editions
@@ -205,6 +221,10 @@ WORKING-STORAGE SECTION.
         77 Wresultat PIC 9(9).
         77 WchoixModifReserv PIC 9(2).
         77 Wjour      PIC 9.
+        77 minutes PIC 9(2).
+        77 jourRep PIC S9(2).
+        77 heureRep PIC S9(4).
+        77 dispoGr PIC 9.
 
     	*>VARIABLES SCENE 
         77 WnbScene PIC 9(2).
@@ -316,11 +336,11 @@ PROCEDURE DIVISION.
       *> On met à jour la date 
        MOVE FUNCTION CURRENT-DATE TO DateActuelle  
 
-       DISPLAY AnActu
        PERFORM WITH TEST AFTER UNTIL choixMenu=0 
         PERFORM WITH TEST AFTER UNTIL choixMenu<9  
       *> METTRE ANNEE ACTUELLE POUR AFFICHER PROGR + PRIX
- 
+       
+        MOVE AnActu TO fe_dateA 
         MOVE AnActu TO fp_dateA    
 
       *> Menu festivallier 
@@ -332,6 +352,7 @@ PROCEDURE DIVISION.
           DISPLAY ' |Gestionnaire, se connecter  :          4|'
           DISPLAY ' |________________________________________|'
           DISPLAY 'Faites un choix : ' WITH NO ADVANCING
+
           ACCEPT choixMenu
            EVALUATE choixMenu
              WHEN 1 PERFORM AFFICHER_PROGRAMMATION 
@@ -407,6 +428,7 @@ PROCEDURE DIVISION.
             DISPLAY ' |Ajouter un utilisateur     :           2|'
             DISPLAY ' |Déconnexion                :           3|'
             DISPLAY ' |Changer mot de passe       :           4|'
+            DISPLAY ' |Supprimer utilisateur      :           5|'
             END-IF 
             DISPLAY ' |________________________________________|'
             DISPLAY 'Faites un choix : ' WITH NO ADVANCING
@@ -416,6 +438,7 @@ PROCEDURE DIVISION.
             WHEN 2 PERFORM AJOUTER_USER
             WHEN 3 PERFORM DECONNEXION_USER 
             WHEN 4 PERFORM PASSWORD_USER
+            WHEN 5 PERFORM SUPPRIMER_USER
             END-EVALUATE
           END-PERFORM
         END-PERFORM.
@@ -462,10 +485,12 @@ PROCEDURE DIVISION.
         DECONNEXION_USER. 
          MOVE 0 TO Wconnect
          MOVE 0 TO fu_ad
+         DISPLAY "Déconnecté"
         CLOSE fusers.
 
         AJOUTER_USER. 
         IF Wconnect = 1 AND fu_ad =1
+         DISPLAY "Vous allez être déconnecté pour continuer la procédure"
          PERFORM DECONNEXION_USER
          OPEN I-O fusers
          DISPLAY "Saisir votre nom d'utilisateur" 
@@ -481,18 +506,17 @@ PROCEDURE DIVISION.
              ACCEPT fu_pass
              DISPLAY "Confirmation, veuillez saisir à nouveau votre mot de passe" 
              ACCEPT Wconfirm 
-             IF Wconfirm = fu_pass 
-              DISPLAY "Mots de passe identiques" 
-             ELSE 
-              DISPLAY "Mots de passe différents"
-             END-IF 
+           IF Wconfirm = fu_pass 
+            DISPLAY "Mots de passe identiques" 
+           ELSE 
+            DISPLAY "Mots de passe différents"
+           END-IF 
             END-PERFORM 
             MOVE 0 TO fu_ad
             WRITE fiTampon
             INVALID KEY DISPLAY "Erreur lors de l'enregistrement"
             NOT INVALID KEY DISPLAY "Compte enregistré" 
             END-WRITE 
-
          END-IF
         ELSE 
          DISPLAY "Veuillez vous connecter en tant qu'administrateur avant de creer un compte"
@@ -527,6 +551,56 @@ PROCEDURE DIVISION.
         READ fusers 
         NOT INVALID KEY 
         MOVE 1 TO Wtrouve. 
+
+        SUPPRIMER_USER. 
+        IF fu_ad = 1 AND Wconnect = 1 
+         DISPLAY "Vous allez être déconnecté pour continuer la procédure"
+         PERFORM DECONNEXION_USER 
+         MOVE 0 TO Wfin
+         OPEN I-O fusers          
+        PERFORM WITH TEST AFTER UNTIL Wfin = 1  
+         READ fusers NEXT RECORD
+         AT END 
+           MOVE 1 TO Wfin 
+         NOT AT END 
+           DISPLAY "Utilisateur : ", fu_id
+         END-READ 
+        END-PERFORM   
+        
+        DISPLAY "Saisir nom utilisateur à supprimer"
+        ACCEPT fu_id 
+        READ fusers 
+        IF fu_id  IS NOT EQUAL "ADMIN"
+
+          DISPLAY "Vous allez supprimer l'utilisateur " , fu_id 
+          DISPLAY "Entrer CONFIRM pour supprimer cet utilisateur ",
+          "ou entrer A pour annuler"
+          ACCEPT nomDernier
+
+          IF nomDernier = "CONFIRM" 
+
+            DELETE fusers RECORD
+            INVALID KEY DISPLAY "Erreur lors de la suppression, " 
+             "vérifier le nom de l'utilisateur à supprimer" 
+            NOT INVALID KEY DISPLAY 'Supression confirmée'
+            END-DELETE
+            ELSE 
+              DISPLAY "Suppression abandonnée par l'utilisateur "
+            END-IF 
+          
+        ELSE 
+           DISPLAY "Impossible de supprimer l'administrateur"
+        END-IF 
+
+        ELSE
+         DISPLAY "Veuillez vous connecter en tant qu'administrateur avant de supprimer un compte"
+        END-IF
+       CLOSE fusers.
+
+
+
+
+
 
 
 
@@ -575,7 +649,7 @@ PROCEDURE DIVISION.
               DISPLAY '1 pour oui, 0 pour non : 'WITH NO ADVANCING
               ACCEPT choix
               *> Si l'utilisateur veut afficher
-              IF choix = 1 AND Wconnect = 1 THEN 
+              IF choix = 1 THEN 
                 PERFORM WITH TEST AFTER UNTIL choix = 0
                   PERFORM AFFICHER_PROGRAMMATION
                   DISPLAY 'Désirez-vous afficher la programmation d''une autre édition?'
@@ -583,32 +657,14 @@ PROCEDURE DIVISION.
                   WITH NO ADVANCING
                   ACCEPT choix
                 END-PERFORM
-              ELSE IF choix = 1 THEN
-                PERFORM AFFICHER_PROGRAMMATION
-                END-IF
               END-IF
               DISPLAY "____________* Nouvelle réservation *__________"
-              IF Wconnect = 1 THEN
-                DISPLAY 'Indiquer l''édition désirée : '
-                WITH NO ADVANCING
-                ACCEPT fres_dateA
-              ELSE 
-                MOVE AnActu TO fres_dateA
-              END-IF
-              MOVE fres_dateA TO fp_dateA
-              DISPLAY 'Voulez-afficher la liste des pass ainsi que'
-              ' les tarifs?'
-              DISPLAY '1 pour oui, 0 pour non : '
+              DISPLAY 'Indiquer l''édition désirée : '
               WITH NO ADVANCING
-              ACCEPT choix
-              IF choix = 1 THEN
-                DISPLAY "_____________* Liste des pass *______________"
-                PERFORM AFFICHER_PASS_EDITION
-              END-IF
-              MOVE fres_dateA TO fe_dateA
-              OPEN INPUT feditions
-              PERFORM VERIF_EDITION
-              CLOSE feditions
+              ACCEPT fres_dateA
+              MOVE fres_dateA TO fp_dateA
+              DISPLAY "_____________* Liste des pass *______________"
+              PERFORM AFFICHER_PASS_EDITION
               IF Wtrouve = 1 THEN
                 MOVE fres_dateA TO fe_dateA
                 PERFORM WITH TEST AFTER UNTIL Wtrouve = 1 AND Wallowed = 1
@@ -666,27 +722,12 @@ PROCEDURE DIVISION.
                 END-PERFORM
                 *> Préparation du tempon pour mettre à jour l'edition
                 MOVE fres_dateA TO fe_dateA
-
-                DISPLAY "______________* Commande *__________________"
-                PERFORM AFFICHER_RESERVATION
-                PERFORM WITH TEST AFTER UNTIL Wsaisie = 'c' 
-                OR Wsaisie = 'a'
-                  DISPLAY '(c)onfirmer la réservation,'
-                  DISPLAY '(a)nnuler la réservation'
-                  ACCEPT Wsaisie
-                  IF Wsaisie = 'c' THEN
-                  *> On ajoute la nouvelle réservation 
-                    WRITE fresTampon 
-                    NOT INVALID KEY
-                      PERFORM MAJ_NBRESERVATION
-                      DISPLAY "___________________________________________"
-                    END-WRITE
-                  ELSE IF Wsaisie = 'a' THEN
-                      DISPLAY 'Réservation annulée'
-                    END-IF
-                  END-IF
-                END-PERFORM
-                  
+                *> On ajoute la nouvelle réservation 
+                WRITE fresTampon 
+                NOT INVALID KEY
+                  PERFORM MAJ_NBRESERVATION
+                  DISPLAY "___________________________________________"
+                END-WRITE
               END-IF
               CLOSE freservations.
 
@@ -1406,7 +1447,7 @@ PROCEDURE DIVISION.
               DISPLAY ' |Afficher les groupes                 : 2|'
               DISPLAY ' |Supprimer un groupe                  : 3|'
               DISPLAY ' |Modifier un groupe                   : 4|'
-              DISPLAY ' |Afficher le nombre moyen de groupe   : 5|'
+              DISPLAY ' |Afficher le nombre de groupe/edition : 5|'
               DISPLAY ' |Evolution deux années successives    : 6|'
               DISPLAY ' |________________________________________|'
               DISPLAY 'Faites un choix : ' WITH NO ADVANCING
@@ -1416,8 +1457,9 @@ PROCEDURE DIVISION.
               WHEN 2 PERFORM AFFICHER_GROUPES
               WHEN 3 PERFORM SUPPRIMER_GROUPE
               WHEN 4 PERFORM MODIFIER_GROUPE
-              WHEN 5 PERFORM MOY_NB_ARTISTE
+              WHEN 5 PERFORM NB_ARTISTE_EDITION
               WHEN 6 PERFORM EVO_ARTISTE_EDITION
+              WHEN 7 PERFORM MOY_NB_ARTISTE
               END-EVALUATE
         END-PERFORM
        END-PERFORM.
@@ -1630,27 +1672,25 @@ PROCEDURE DIVISION.
           WITH NO ADVANCING
           ACCEPT frep_jour
         END-PERFORM
-        *>vérif disponibilité du groupe 
-        PERFORM WITH TEST AFTER UNTIL dispoGr = 0 AND frep_heureDebut + 200 <= 2400
-          PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 10 AND frep_heureDebut + 2 <= 24
-            DISPLAY 'Indiquer l''heure de début (HH) : '
-            WITH NO ADVANCING
-            ACCEPT frep_heureDebut
-          END-PERFORM
-          PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
-            DISPLAY 'et les minutes (MM) : '
-            WITH NO ADVANCING
-            ACCEPT minutes
-          END-PERFORM
-            COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
-            MOVE frep_dateA TO anneRep
-            MOVE frep_heureDebut TO heureRep
-            MOVE frep_jour TO jourRep
-            PERFORM VERIF_DISPO_GROUPE
-            MOVE anneRep TO frep_dateA
-            MOVE heureRep TO frep_heureDebut
-            MOVE jourRep TO frep_jour
+        PERFORM WITH TEST AFTER UNTIL dispoGr = 0
+        PERFORM WITH TEST AFTER UNTIL frep_heureDebut >= 0 AND frep_heureDebut < 24
+          DISPLAY 'Indiquer l''heure de début (HH) : '
+          WITH NO ADVANCING
+          ACCEPT frep_heureDebut
         END-PERFORM
+        PERFORM WITH TEST AFTER UNTIL minutes >= 0 AND minutes < 60
+          DISPLAY 'et les minutes (MM) : '
+          WITH NO ADVANCING
+          ACCEPT minutes
+        END-PERFORM
+              COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
+              MOVE frep_heureDebut TO heureRep
+              MOVE frep_jour TO jourRep
+              MOVE frepTampon TO frepTamponTemp
+              PERFORM VERIF_DISPO_GROUPE
+              MOVE frepTamponTemp TO frepTampon
+              END-PERFORM
+         
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1681,7 +1721,7 @@ PROCEDURE DIVISION.
                 DISPLAY 'Nombre de personne max : '
                 WITH NO ADVANCING
                 ACCEPT frep_nbPersonneMax
-                IF frep_nbPersonneMax > fs_capacite THEN
+                IF frep_nbPersonneMax <= fs_capacite THEN
                   DISPLAY 'La capacité max de la scène est de : ',fs_capacite
                 END-IF
               END-PERFORM
@@ -1757,13 +1797,11 @@ PROCEDURE DIVISION.
               MOVE 1 TO Wfin
             NOT AT END
               IF frep_jour = jourRep THEN
-              IF heureRep = frep_heureDebut AND heureRep = frep_heureDebut + 200
+                IF heureRep >= frep_heureDebut AND heureRep <= frep_heureDebut + 200
                 DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
                 MOVE 1 TO dispoGr
-                ELSE IF heureRep > frep_heureDebut AND heureRep < frep_heureDebut + 200
-                DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
-                MOVE 1 TO dispoGr
-                ELSE IF frep_heureDebut > heureRep AND frep_heureDebut < heureRep + 200
+                END-IF
+                IF frep_heureDebut >= heureRep AND frep_heureDebut <= heureRep + 200
                 DISPLAY 'Le groupe a déjà une représentation à ',frep_heureDebut
                 MOVE 1 TO dispoGr
                 END-IF
@@ -1775,14 +1813,10 @@ PROCEDURE DIVISION.
         AFFICHER_PROGRAMMATION.
           OPEN INPUT frepresentations                     
           MOVE 1 TO Wcount   
-          IF Wconnect = 1 THEN
-            PERFORM AFFICHAGE_ANNEES_EDITIONS
-            DISPLAY 'Indiquer l''édition : '
-            WITH NO ADVANCING
-            ACCEPT frep_dateA 
-          ELSE 
-            MOVE AnActu TO frep_dateA
-          END-IF
+          PERFORM AFFICHAGE_ANNEES_EDITIONS
+          DISPLAY 'Indiquer l''édition : '
+          WITH NO ADVANCING
+          ACCEPT frep_dateA 
           MOVE frep_dateA TO dateA
           PERFORM WITH TEST AFTER UNTIL Wcount > 3 OR Wtrouve = 0
             MOVE 0 TO Wcpt
@@ -1805,10 +1839,10 @@ PROCEDURE DIVISION.
                   IF dateA = frep_dateA THEN
                     IF frep_jour = Wjour THEN
                     IF Wcpt = 0 THEN
-                      DISPLAY '|______________________* Programmation jour ',Wcount,' *_____________________|'
+                      DISPLAY '|______________________* Programmation jour ',Wcount,' *___________________|'
                       DISPLAY '|Groupe                        |Scène                         |Heure|'
                     END-IF
-                      DISPLAY '|',frep_nomGr,'|', frep_nomSce,' |',frep_heureDebut,' |'
+                      DISPLAY '|',frep_nomGr,'|', frep_nomSce,'|',frep_heureDebut,' |'
                       COMPUTE Wcpt = Wcpt + 1
                     END-IF
                     
@@ -1820,22 +1854,19 @@ PROCEDURE DIVISION.
              END-START 
              COMPUTE Wcount = Wcount + 1
              IF Wtrouve = 1 THEN
-             DISPLAY '|______________________________|_______________________________|_____|'
+             DISPLAY '|______________________________|______________________________|_____|'
              END-IF
           END-PERFORM
           CLOSE frepresentations.
 
 
        SUPPRIMER_REPRESENTATION.
-                  OPEN I-O frepresentations
-                   DISPLAY 'Indiquer l''édition : '
-                   WITH NO ADVANCING
-                   ACCEPT frep_dateA
-                 DISPLAY 'Indiquer le nom de la scène : '
-                 WITH NO ADVANCING
+              OPEN I-O frepresentations
+              PERFORM AFFICHER_REPRESENTATION
+                 MOVE fe_dateA TO frep_dateA
+                 DISPLAY 'Nom de la scène :'
                  ACCEPT frep_nomSce
-                 DISPLAY 'Indiquer le jour de représentation : '
-                 WITH NO ADVANCING
+                 DISPLAY 'Jour :'
                  ACCEPT frep_jour
                  DISPLAY 'Indiquer l''heure de représentation (HH): '
                  WITH NO ADVANCING
@@ -1846,14 +1877,13 @@ PROCEDURE DIVISION.
                  COMPUTE frep_heureDebut = frep_heureDebut * 100 + minutes
                  READ frepresentations
                   MOVE frep_nomGr TO nomGr
-                  DISPLAY frepTampon
                  DELETE frepresentations RECORD
                   INVALID KEY
                     DISPLAY 'La représentation n existe pas'
                   NOT INVALID KEY
-                    DISPLAY 'Représentation supprimée'
                     MOVE nomGr TO frep_nomGr
-                    DISPLAY frep_nomGr
+                   DISPLAY 'Représentation supprimée'
+                   DISPLAY frep_nomGr
                     START frepresentations,
                     KEY = frep_nomGr
                       INVALID KEY
@@ -1867,7 +1897,6 @@ PROCEDURE DIVISION.
                       END-READ
                     CLOSE feditions
                      END-START
-                  END-DELETE
               CLOSE frepresentations.
 
        
@@ -2002,25 +2031,24 @@ PROCEDURE DIVISION.
        DISPLAY "Saisir le nom de la scene"
        ACCEPT fs_nomSce
        PERFORM VERIF_SCENES
-    
        IF Wtrouve = 0 
-        DISPLAY 'La scene spécifié n''existe pas' 
+        DISPLAY 'La scène spécifié n''existe pas' 
        ELSE 
          PERFORM VERIF_PROGRAMME_SCENE
          
         IF Wprog = 1 
           DISPLAY "Impossible de supprimer la scene " 
-          DISPLAY "Représentation programmé !"
+          DISPLAY "Représentation programmée !"
         ELSE 
               OPEN I-O feditions
-             *> Si la scene existe et n'a pas de représentation programmé 
+             *> Si la scene existe et n'a pas de représentation programmée 
               *> On initialise les variables temporaires
               MOVE fs_dateA TO fe_dateA
               MOVE 0 TO WnbScene
               MOVE 0 TO WCouTemp
 
-              *> On met a jour le nombre de  scene + le res de l'edition
-              *> Et le cout moyen 
+              *> On met a jour le nombre de  scene + le cout des scène 
+    
               MOVE fe_nbScene TO WnbScene
               MOVE fe_coutScenes TO WCouTemp
               *> On enlève le cout de la scene  
@@ -2052,10 +2080,10 @@ PROCEDURE DIVISION.
 
        VERIF_PROGRAMME_SCENE. 
        MOVE 0 TO Wprog
-       MOVE fs_nomSce TO frep_nomSce 
+       MOVE 0 TO Wfin
        OPEN INPUT frepresentations
+       MOVE fs_nomSce TO frep_nomSce 
        START frepresentations, KEY = frep_nomSce
-
         INVALID KEY 
            DISPLAY 'Aucune représentation programmé' 
         NOT INVALID KEY
@@ -2066,6 +2094,8 @@ PROCEDURE DIVISION.
            NOT AT END   
               IF frep_dateA = fs_dateA
                 MOVE 1 TO Wprog
+                MOVE 1 TO WFin
+                DISPLAY "REPRESENTATION PROGRAMME"
               END-IF
           END-PERFORM  
        END-START    
@@ -2162,6 +2192,7 @@ PROCEDURE DIVISION.
        MODIFIER_SCENE_CAPACITE.
        *>  On initialisa notre variable max 
        MOVE 0 TO WnbMax
+       MOVE 0 TO Wfin
            OPEN INPUT frepresentations                        
                 MOVE fs_dateA TO frep_dateA 
                 START frepresentations,
@@ -2184,7 +2215,7 @@ PROCEDURE DIVISION.
                  END-START
                 CLOSE frepresentations
                 MOVE 0 TO fs_capacite
-           PERFORM WITH TEST AFTER UNTIL fs_capacite > 0 AND fs_capacite<99
+           PERFORM WITH TEST AFTER UNTIL fs_capacite IS GREATER OR EQUAL WnbMax AND fs_capacite<99
             DISPLAY 'Saisir une capacite supérieure à', WnbMax 'et inférieure à 99'
             DISPLAY WnbMax,' correpond au nombre maximum de personne présente '
             'pour les représentations programmées'
@@ -2294,6 +2325,7 @@ PROCEDURE DIVISION.
           DISPLAY 'Indiquer l''année (YYYY) : '
           WITH NO ADVANCING 
           ACCEPT fs_dateA
+          MOVE fs_dateA TO fe_dateA
        END-PERFORM  
 
        OPEN INPUT fscenes
@@ -2308,7 +2340,11 @@ PROCEDURE DIVISION.
             AT END 
               MOVE 1 TO WFin
            NOT AT END   
-              PERFORM AFFICHER_SCENES
+              IF fs_dateA IS NOT EQUAL fe_dateA
+                MOVE 1 TO WFin
+              ELSE 
+                PERFORM AFFICHER_SCENES
+              END-IF
           END-PERFORM.
 
        AFFICHER_SCENES_ANNEE_SP.
@@ -2465,7 +2501,6 @@ PROCEDURE DIVISION.
        AFFICHAGE_ANNEES_EDITIONS.
        OPEN I-O feditions 
        MOVE 0 TO Wfin
-       DISPLAY ' * Toutes les éditions disponibles'
        PERFORM WITH TEST AFTER UNTIL Wfin = 1
          READ feditions NEXT
            AT END 
