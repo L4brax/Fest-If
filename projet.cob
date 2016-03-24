@@ -47,6 +47,7 @@ FILE-CONTROL.
        ALTERNATE RECORD KEY IS frep_nomGr WITH DUPLICATES
        ALTERNATE RECORD KEY IS frep_nomSce WITH DUPLICATES.
 
+
        SELECT frepresentationsTemp ASSIGN TO "representations.dat"
        ORGANIZATION IS INDEXED
        ACCESS IS dynamic
@@ -133,9 +134,8 @@ FILE SECTION.
             03 frep_dateAT PIC S9(4).
             03 frep_nomSceT PIC A(30).
           02 frep_nomGrT PIC A(30).
-          02 frep_cachetT PIC S9(6).
+          02 frep_cachetT PIC S9(9).
           02 frep_nbPersonneMaxT PIC S9(30).
-
 
          FD feditions. 
          01 fedTampon. 
@@ -150,6 +150,7 @@ FILE SECTION.
           02 fe_Ca PIC S9(30). 
           02 fe_coutScenes PIC 9(30). 
           02 fe_coutArtistes PIC 9(30). 
+          02 fe_nbRepresentation PIC 9(2).
                   
 WORKING-STORAGE SECTION.
       *> Déclarations des zones de compte rendu  
@@ -203,17 +204,17 @@ WORKING-STORAGE SECTION.
         77 WrepSc PIC 9(1).
         *>AJOUT_SCENES 
         77 WnomSc PIC A(4).
-     *> MODIFIER_SCENE
+      *> MODIFIER_SCENE
         77 Wprog PIC 9(1).
-     *> MOFIFIER CAPACITER SCENE
-     *> Correspond au nombre de personne max 
-     *> present sur un scene pour toute les representation  
+      *> MOFIFIER CAPACITER SCENE
+      *> Correspond au nombre de personne max 
+      *> present sur un scene pour toute les representation  
         77 WnbMax PIC 9(2).   
-     *> ANNEE 
+      *> Annee
         77 Wyear PIC 9(4).
         77 conf PIC 9(1). 
         77 Wrep PIC 9(1).
-     *>  Statistiques
+      *>  Statistiques
         77 WcoutMoyenA PIC 9(30).
         77 WcoutMoyenS PIC 9(30).
         77 nbArtisteN PIC 9(3).
@@ -344,9 +345,21 @@ PROCEDURE DIVISION.
               MOVE 01 TO j
               MOVE 01 TO m
               MOVE 1801 TO j
-
-
-              DISPLAY'Quel est l''édition à laquelle il veut participer'
+              DISPLAY 'Désirez-vous afficher une programmation avant d''effectuer une réservation?'
+              DISPLAY '1 pour oui, 0 pour non : 'WITH NO ADVANCING
+              ACCEPT choix
+              IF choix = 1 THEN 
+                PERFORM WITH TEST AFTER UNTIL choix = 0
+                  PERFORM AFFICHER_PROGRAMMATION
+                  DISPLAY 'Désirez-vous afficher la programmation d''une autre édition?'
+                  DISPLAY '1 pour oui, 0 pour non : '
+                  WITH NO ADVANCING
+                  ACCEPT choix
+                END-PERFORM
+              END-IF
+              DISPLAY "____________* Nouvelle réservation *__________"
+              DISPLAY 'Indiquer l''édition désirée : '
+              WITH NO ADVANCING
               ACCEPT fres_dateA
               MOVE fres_dateA TO fp_dateA
               PERFORM AFFICHER_PASS_EDITION
@@ -1202,9 +1215,8 @@ PROCEDURE DIVISION.
             PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
               DISPLAY 'Année ?'
               ACCEPT fe_dateA
-              OPEN INPUT feditions 
+              OPEN I-O feditions 
                 PERFORM VERIF_EDITION
-              CLOSE feditions
             END-PERFORM
             MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1240,20 +1252,7 @@ PROCEDURE DIVISION.
               PERFORM VERIF_DISPO_GROUPE
               MOVE frepTamponTemp TO frepTampon
               END-PERFORM
-              *> Incrémentation du nombre d'artiste
-
-              START frepresentations,
-                KEY = frep_nomGr
-                  INVALID KEY
-                    OPEN I-O feditions
-                      READ feditions
-                        NOT INVALID KEY
-                          COMPUTE fe_nbArtiste = fe_nbArtiste + 1
-                          REWRITE fedTampon 
-                      END-READ
-                    CLOSE feditions
-                 END-START
-
+         
               MOVE nomGr TO frep_nomSce
               MOVE 0 TO Wtrouve
               PERFORM WITH TEST AFTER UNTIL Wtrouve = 1
@@ -1290,10 +1289,39 @@ PROCEDURE DIVISION.
               WRITE frepTampon 
                 INVALID KEY
                 DISPLAY 'erreur interne  ******'
+               *> Si on a bien ajouté la représentation 
+               *> on met à jour l'édition  
                 NOT INVALID KEY
                 DISPLAY 'représentation ajoutée'
+                READ feditions
+                INVALID KEY DISPLAY "Erreur lors du chargement de l'édition"
+                     
+                NOT INVALID KEY 
+                  *> Incrémentation du nombre de représentation 
+                  ADD 1 TO fe_nbRepresentation END-ADD 
+                  ADD frep_cachet TO fe_coutArtistes END-ADD
+                  REWRITE fedTampon 
+                    INVALID KEY DISPLAY "Erreur de mise à jour de l'édition"
+                    NOT INVALID KEY DISPLAY "Mise à jour de l'édition effectuée"
+                  END-REWRITE
+                END-READ
+                    *> Incrémentation du nombre d'artiste
+
+                START frepresentations,
+                      KEY = frep_nomGr
+                      INVALID KEY
+                      READ feditions
+                        NOT INVALID KEY
+                          COMPUTE fe_nbArtiste = fe_nbArtiste + 1
+                          REWRITE fedTampon 
+                      END-READ
+                  END-START
+
+                CLOSE feditions
+
               END-WRITE
               CLOSE frepresentations.
+
 
         AFFICHER_REPRESENTATION.
         MOVE 0 to Wfin
